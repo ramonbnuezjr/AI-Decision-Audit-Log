@@ -1,0 +1,45 @@
+---
+description: Security rules for all Python files
+globs: ["**/*.py"]
+alwaysApply: false
+---
+
+# Security Rules
+
+## Absolutely Prohibited
+- eval(), exec(), compile() — no exceptions, no workarounds
+- pickle or marshal for untrusted data
+- Hardcoded secrets, tokens, API keys, or credentials as string literals
+
+## Secrets
+- Use os.getenv() or pydantic-settings BaseSettings ONLY.
+- All required env vars must be documented in .env.example with descriptions.
+- Never log secret values. Mask before logging.
+
+## Input Validation
+- All external input MUST be validated via Pydantic models before use.
+- Reject malformed input explicitly with structured error responses.
+- Never trust data from HTTP requests, file uploads, GPIO, or MCP tool results without validation.
+
+## Serialization
+- YAML: yaml.safe_load() only. Never yaml.load().
+- XML: defusedxml only. Never stdlib xml.etree directly for untrusted input.
+- JSON from external sources: parse into typed Pydantic models immediately.
+
+## Error Handling
+- Never expose stack traces to external callers.
+- Use structured logging (structlog or stdlib logging with JSON formatter).
+- Catch exceptions at the boundary layer. Let them propagate internally for visibility.
+- Every `except Exception` must include a comment explaining why broad catch is justified.
+
+## Dependencies
+- All dependencies must be pinned to exact versions in pyproject.toml.
+- Flag any dependency with known CVEs. Do not silently include them.
+
+## Network
+- Enforce HTTPS/TLS for all outbound HTTP. Never allow http:// in production paths.
+- Apply least-privilege to all API credentials. Never request broader scopes than needed.
+
+## Self-Audit
+Before generating any Python, audit against these rules.
+REJECT and explain if a violation would be introduced.

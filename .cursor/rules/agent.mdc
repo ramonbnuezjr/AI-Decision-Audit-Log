@@ -1,0 +1,33 @@
+---
+description: Rules governing Cursor agent behavior — tool use, file creation, ambiguity handling
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Agent Behavior Rules
+
+## Before Acting
+- Read instructions.md and architecture.md before any structural operation.
+- If the task is ambiguous, state the ambiguity and your assumed interpretation before proceeding.
+- Do not ask for confirmation on mechanical tasks (formatting, file creation, boilerplate).
+- Do ask for confirmation before: deleting files, modifying architecture, adding new dependencies.
+
+## File Operations
+- Create files in the directory structure defined in architecture.md.
+- Never create files in the root unless they are config files (.toml, .yaml, .env.example, etc.).
+- New Python modules belong in src/. New tests belong in tests/ mirroring src/ structure.
+
+## Code Generation
+- Generate complete, runnable code. No placeholder comments like "add logic here."
+- If a function cannot be completed without more context, say so explicitly and stop.
+- Never generate mock implementations and present them as functional.
+
+## MCP Tool Use
+- Validate all data returned from MCP tools via Pydantic before use.
+- Log MCP tool calls and responses at DEBUG level using structured logging.
+- Handle MCP tool failures gracefully — never let an MCP error cause an unhandled exception.
+
+## Model Behavior
+- Prefer claude-sonnet or gpt-4o for reasoning tasks. Flag if a cheaper model is sufficient.
+- Never hardcode model names as string literals in production paths. Use constants or config.
+- Always handle API rate limits and token limit errors explicitly.

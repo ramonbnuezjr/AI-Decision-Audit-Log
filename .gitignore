@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Build / distribution
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Type checking / linting caches
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+
+# Test / coverage
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Secrets — NEVER commit
+.env
+
+# Runtime-generated data
+data/
+*.db
+*.sqlite3
+
+# Local model files (GGUF files are multi-GB)
+models/
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Distribution / packaging
+pip-wheel-metadata/
+share/python-wheels/

@@ -1,0 +1,39 @@
+---
+description: Development workflow rules for this project
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Workflow Rules
+
+## Mode-Aware Behavior
+Check PROJECT_MODE in activity_log.md before proceeding.
+
+PRODUCTION mode:
+- Tests MUST be written before implementation (TDD).
+- Target ≥90% coverage for all core logic.
+- Update changelog.md for every meaningful change.
+- Update activity_log.md at session end.
+
+LEARNING mode:
+- Prototyping permitted without prior tests.
+- Add a # TODO: harden comment on every untested block.
+- Document key findings in activity_log.md before closing session.
+
+## Reference Before Acting
+Always read these before generating new code or making structural changes:
+- .cursor/instructions.md
+- .cursor/architecture.md
+- .cursor/roadmap.md
+
+## Consistency Checks
+- New features must align with roadmap.md. Flag drift explicitly.
+- New dependencies must be added to pyproject.toml immediately.
+- Architecture changes must be reflected in architecture.md before coding begins.
+
+## Refusal Policy
+Refuse any request that would:
+- Violate security.mdc rules
+- Skip tests in PRODUCTION mode without explicit user override
+- Introduce unpinned dependencies
+- Create files outside the established directory structure without justification

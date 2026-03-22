@@ -1,0 +1,73 @@
+[build-system]
+requires = ["hatchling>=1.21.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[project]
+name = "ai-decision-audit-log"
+version = "0.1.0"
+description = "Structured tracing and logging of AI model decisions — inputs, outputs, reasoning metadata, persisted to a queryable local audit store."
+requires-python = ">=3.11"
+dependencies = [
+  # AI / LLM
+  "anthropic==0.49.0",
+  "openai==1.68.2",
+  # llama.cpp Python bindings — install with Metal on Apple Silicon:
+  # CMAKE_ARGS="-DLLAMA_METAL=on" pip install llama-cpp-python==0.3.16
+  "llama-cpp-python==0.3.16",
+  "pydantic==2.11.10",
+  "pydantic-settings==2.9.1",
+  # MCP (stub — not active)
+  "mcp==1.2.1",
+  # HTTP / async
+  "httpx==0.28.1",
+  "anyio==4.7.0",
+  # Logging
+  "structlog==24.4.0",
+  # Hardware (Raspberry Pi — conditionally installed)
+  # "RPi.GPIO==0.7.1",       # Uncomment on Pi hardware
+  # "adafruit-blinka==8.40.0",  # Uncomment on Pi hardware
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==8.3.5",
+  "pytest-cov==6.0.0",
+  "pytest-asyncio==0.25.3",
+  "mypy==1.15.0",
+  "ruff==0.8.6",
+  "black==25.1.0",
+  "pre-commit==4.1.0",
+  "bandit==1.8.3",
+  "pip-audit==2.8.0",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+select = ["E", "F", "W", "I", "N", "S", "B", "A", "C4", "T20"]
+ignore = ["S101"]  # allow assert in tests
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+ignore_missing_imports = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "--cov=src --cov-report=term-missing --cov-fail-under=90"
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["tests/*", "scripts/*"]
+
+[tool.bandit]
+targets = ["src"]
+skips = []

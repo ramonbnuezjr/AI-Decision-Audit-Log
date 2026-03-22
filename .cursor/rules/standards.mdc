@@ -1,0 +1,31 @@
+---
+description: Python coding standards for all source files
+globs: ["**/*.py"]
+alwaysApply: false
+---
+
+# Python Coding Standards
+
+## Style
+- PEP 8 enforced: snake_case variables/functions, CapWords classes, UPPER_CASE constants
+- 4-space indentation. Max 88-character line length (Black default).
+- Import order: stdlib → third-party → local. One blank line between groups.
+- Prefer list/dict/set comprehensions over explicit loops where readable.
+- Use `is None` / `is not None`. Never `== None`.
+
+## Type Safety
+- Type hints REQUIRED on all function signatures and public methods.
+- Code must pass `mypy --strict` cleanly.
+- Pydantic models for all data structures crossing system boundaries.
+
+## Documentation
+- Docstrings REQUIRED on all public functions, classes, and modules.
+- Format: one-line summary → blank line → Args → Returns → Raises (if applicable).
+
+## Formatting
+- Black formatting is the source of truth. Never argue with Black output.
+- Ruff handles linting. Respect all ruff errors unless explicitly suppressed with comment.
+
+## Self-Audit
+Before generating any Python, audit output against these rules.
+Flag any deviation inline as: `# AUDIT: <reason for deviation>`
