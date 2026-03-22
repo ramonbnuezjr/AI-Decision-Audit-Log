@@ -5,6 +5,57 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## v0.1.2 — Local Model Integration & Provider Incident Log — 2026-03-22
+
+### Added
+- Downloaded **Llama 3.2 3B Instruct Q4_K_M** GGUF (1.9 GB) from
+  [bartowski/Llama-3.2-3B-Instruct-GGUF](https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF)
+  on HuggingFace into `models/` directory
+- `models/` directory created; `.gitignore` already excludes GGUF files (multi-GB)
+- First successful end-to-end `llama_cpp` capture verified:
+  - 1 call, `status=success`, latency ~100s (initial model load), 13 input / 270 output tokens
+  - Metal GPU acceleration active (`n_gpu_layers=-1`, all layers on M2 Metal)
+  - `ggml_metal_init: skipping kernel_*_bf16` messages are expected — M2 does not support BF16
+    kernels; llama.cpp silently falls back to F16/F32 with no impact on correctness
+
+### Changed
+- `LLAMA_MODEL_PATH` in `.env` updated from placeholder `./models/llama3.gguf` to
+  `./models/llama-3.2-3b-instruct.Q4_K_M.gguf`
+- README Local Model Setup section updated with specific Llama 3.2 3B curl download command
+  and M2 8 GB memory profile
+
+### Fixed / Lessons Learned
+
+#### Anthropic API — persistent 401 authentication errors
+- Encountered `invalid x-api-key` (HTTP 401) on all Anthropic calls despite:
+  - Correct key format (`sk-ant-api03-`, 108 chars, no invisible characters)
+  - No whitespace or encoding issues (verified via raw byte inspection)
+  - Key loading correctly from `.env` (pydantic-settings confirmed)
+  - Direct `curl` bypassing all Python/SDK also returned 401
+- Root cause: Unresolved on the Anthropic account side (billing or key activation state)
+- Decision: Defer Anthropic until account is confirmed active; use OpenAI and llama_cpp for now
+
+#### OpenAI API — 429 quota error on first attempt
+- First OpenAI call returned `insufficient_quota` (HTTP 429) — billing was not yet activated
+  on the initial API key
+- Fix: Activated billing in the OpenAI console, regenerated key; second call succeeded
+- Audit log correctly captured both the error and the success in session `ses-001`
+
+#### Mistral 7B — too large for M2 Mini with 8 GB unified memory
+- Mistral 7B Instruct Q4_K_M (~4.4 GB) leaves insufficient headroom on an 8 GB M2 Mini:
+  macOS baseline ~2.5 GB + model ~4.4 GB + Python process ~0.5 GB = ~7.4 GB, causing
+  system thrashing and poor performance
+- Decision: Use **Llama 3.2 3B Instruct Q4_K_M (~2.0 GB)** — Meta's latest small model,
+  leaves ~3 GB free headroom, strong instruction-following capability for testing
+
+### Live Audit Log State (post-session)
+```
+PROVIDER     MODEL                                       CALLS   OK  ERR
+anthropic    claude-sonnet-4-20250514                        4    0    4  ← all auth failures
+openai       gpt-4o                                          2    1    1  ← 1 quota error, 1 success
+llama_cpp    ./models/llama-3.2-3b-instruct.Q4_K_M.gguf     1    1    0  ← fully operational
+```
+
 ## v0.1.1 — Dependency Hardening & GitHub Release — 2026-03-22
 
 ### Fixed

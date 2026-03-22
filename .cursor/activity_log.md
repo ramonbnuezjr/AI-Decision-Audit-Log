@@ -57,3 +57,48 @@
   - `.gitignore` — excludes secrets, venv, generated data, model files
 - **Docs updated:** `README.md` (badges, real repo URL), `changelog.md` (v0.1.1 entry)
 - **Published:** initial commit pushed to https://github.com/ramonbnuezjr/AI-Decision-Audit-Log
+
+### 2026-03-22 — Provider testing, incident triage, and local model setup
+
+- **Mode:** PRODUCTION
+- **Goal:** Verify all three providers work end-to-end via the CLI
+
+#### Anthropic — FAILED (auth errors, unresolved)
+- All four attempts to `capture --provider anthropic` returned HTTP 401 `invalid x-api-key`
+- Diagnostics performed:
+  - Raw byte inspection of `.env` — no invisible characters, no non-ASCII, no whitespace
+  - Confirmed key loads correctly from both shell env and pydantic-settings
+  - Direct `curl` to `api.anthropic.com/v1/messages` (no Python) also returned 401
+  - Key is correctly formatted: `sk-ant-api03-` prefix, 108 characters
+- Conclusion: Issue is Anthropic account-side (billing state or key activation); deferred
+- All 4 failed attempts were captured and persisted in the audit log (status=error)
+
+#### OpenAI — SUCCEEDED (after fixing billing)
+- First attempt returned HTTP 429 `insufficient_quota` — billing not yet activated
+- After activating billing in the OpenAI console and regenerating the key, second call
+  returned HTTP 200
+- Verified: session `ses-001`, `status=success`, 19 input tokens, 38 output tokens, 1,670ms
+- Both the error and the success are captured in the audit log — governance working as designed
+
+#### Decision: switch primary testing to local LLM
+- To avoid cloud API costs and external dependencies during development, switched to
+  `--provider llama_cpp` as the primary testing provider
+- Mistral 7B was considered and rejected: Q4_K_M (~4.4 GB) leaves < 1 GB free on
+  M2 Mini 8 GB unified memory, causing system pressure
+- Selected **Llama 3.2 3B Instruct Q4_K_M** (~2.0 GB) as the primary local model:
+  - Meta's most recent small model (late 2024)
+  - ~3 GB free headroom on the M2 Mini 8 GB
+  - Strong instruction-following for testing purposes
+  - Metal GPU acceleration confirmed active
+
+#### Local model setup (llama_cpp) — SUCCEEDED
+- Created `models/` directory
+- Downloaded `llama-3.2-3b-instruct.Q4_K_M.gguf` (1.9 GB) from
+  `bartowski/Llama-3.2-3B-Instruct-GGUF` on HuggingFace via `curl`
+- Updated `LLAMA_MODEL_PATH` in `.env`
+- Test capture with `--provider llama_cpp` succeeded:
+  - Model loaded via Metal GPU (all layers offloaded, `n_gpu_layers=-1`)
+  - BF16 kernel skip messages are normal — M2 does not support BF16, F16/F32 used instead
+  - 1 successful audit log entry: 13 input tokens, 270 output tokens
+- Docs updated: `changelog.md`, `README.md`, `roadmap.md`, `activity_log.md`
+- Changes pushed to https://github.com/ramonbnuezjr/AI-Decision-Audit-Log

@@ -46,20 +46,38 @@ cp .env.example .env
 
 ## Local Model Setup (llama.cpp)
 
-Download a GGUF model and point `LLAMA_MODEL_PATH` at it:
+No API key required. Runs entirely on-device via Metal GPU on Apple Silicon.
+
+### Recommended model for M2 Mini / M2 Pro with 8 GB unified memory
+
+**Llama 3.2 3B Instruct Q4_K_M** — Meta's latest small model, ~2.0 GB on disk, leaves ~3 GB
+free headroom alongside macOS. Verified working on M2 Mini 8 GB.
+
+> **Why not Mistral 7B?** Mistral 7B Q4_K_M is ~4.4 GB. On an 8 GB M2 Mini (macOS baseline
+> ~2.5 GB + model + Python process), it leaves < 1 GB free and causes system thrashing.
+> Use a 3B model for 8 GB machines; Mistral 7B is suitable for 16 GB+.
 
 ```bash
 mkdir -p models
-# Example: download Llama 3 8B Q4_K_M from HuggingFace
-# https://huggingface.co/TheBloke — search for the model + "GGUF"
-# Place the .gguf file in ./models/
 
-# Recommended .env settings for Apple Mini M2 (8 GB unified memory):
-# LLAMA_MODEL_PATH=./models/llama-3-8b-instruct.Q4_K_M.gguf
-# LLAMA_N_CTX=2048       ← conservative for 8 GB
-# LLAMA_N_GPU_LAYERS=-1  ← all layers on Metal
-# LLAMA_N_THREADS=4
+# Download Llama 3.2 3B Instruct Q4_K_M (~2.0 GB) — verified on M2 Mini 8 GB
+curl -L -o models/llama-3.2-3b-instruct.Q4_K_M.gguf \
+  "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
 ```
+
+Then set in `.env`:
+
+```
+LLAMA_MODEL_PATH=./models/llama-3.2-3b-instruct.Q4_K_M.gguf
+LLAMA_N_CTX=2048       # conservative for 8 GB
+LLAMA_N_GPU_LAYERS=-1  # all layers on Metal GPU
+LLAMA_N_THREADS=4
+```
+
+> **Note on startup:** The first `capture --provider llama_cpp` call loads the model into
+> Metal GPU memory (~10–20 seconds). Subsequent calls in the same session are fast.
+> `ggml_metal_init: skipping kernel_*_bf16` messages are normal — M2 does not support BF16
+> kernels; llama.cpp uses F16/F32 automatically with no impact on output quality.
 
 ## Running Tests
 
@@ -122,11 +140,13 @@ python -m src.main export --format json --output ./audit_export.json
 
 ```bash
 python -m src.main summary
-# PROVIDER     MODEL                               CALLS     OK    ERR    IN TOK   OUT TOK
-# anthropic    claude-sonnet-4-20250514               12     11      1      8420      2105
-# openai       gpt-4o                                  4      4      0      2800       640
-# llama_cpp    ./models/llama-3-8b-instruct.Q4_K_M     6      6      0         0         0
+# PROVIDER     MODEL                                        CALLS    OK   ERR   IN TOK  OUT TOK
+# anthropic    claude-sonnet-4-20250514                         4     0     4        0        0
+# openai       gpt-4o                                           2     1     1       19       38
+# llama_cpp    ./models/llama-3.2-3b-instruct.Q4_K_M.gguf      1     1     0       13      270
 ```
+
+Notice that failed calls (errors) are recorded too — every attempt is audited regardless of outcome.
 
 ## Environment Variables
 

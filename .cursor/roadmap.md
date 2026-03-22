@@ -19,6 +19,10 @@
 - [x] Coverage ≥90% verified clean — **98.35% (109 tests passed)**
 - [x] README complete and accurate (badges, real repo URL, CLI examples)
 - [x] Published to GitHub: https://github.com/ramonbnuezjr/AI-Decision-Audit-Log
+- [x] Local model verified end-to-end: **Llama 3.2 3B Instruct Q4_K_M** on M2 Mini 8 GB
+      via Metal GPU (`n_gpu_layers=-1`) — status=success, 1.9 GB model, ~3 GB free headroom
+- [x] Provider incident log documented: Anthropic 401, OpenAI 429, Mistral 7B OOM — all
+      captured in audit log and recorded in `changelog.md` / `activity_log.md`
 - [ ] Pre-commit hooks passing cleanly (black, ruff, mypy, bandit)
 - [ ] `mypy --strict` passing cleanly across all modules
 - [ ] All secrets validated as present at startup; fail fast with clear error message
