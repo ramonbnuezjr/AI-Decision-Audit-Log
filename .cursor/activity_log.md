@@ -102,3 +102,24 @@
   - 1 successful audit log entry: 13 input tokens, 270 output tokens
 - Docs updated: `changelog.md`, `README.md`, `roadmap.md`, `activity_log.md`
 - Changes pushed to https://github.com/ramonbnuezjr/AI-Decision-Audit-Log
+
+### 2026-03-22 — POC incident analysis tooling built
+
+- **Mode:** PRODUCTION
+- **Goal:** Build the tooling to turn two weeks of ServiceNow incident data into
+  legible governance evidence via the local Llama 3.2 3B model
+- **New analysis queries added to `src/db/query.py`:**
+  - `get_latency_stats()` — p50/p95/min/max percentile stats on successful calls
+  - `get_provider_health()` — per-provider reliability rate and last error context
+  - `get_session_activity()` — session ranking by call volume with user and timing
+- **New CLI command:** `python -m src.main report` — full governance report surfacing
+  incidents, provider health, latency profile, token burn with cost estimate,
+  session activity, and latency anomalies (>2× median)
+- **New script:** `scripts/run_incidents.py` — ServiceNow incident runner:
+  5 prompt templates (summarize, root cause, priority check, remediation, escalation),
+  JSON/CSV input, `--dry-run`, `--limit`, `--provider`, `--user-id` flags
+- **New data file:** `data/sample_incidents.json` — 5 synthetic tickets for smoke testing
+- **New doc:** `docs/POC_PLAYBOOK.md` — day-by-day two-week run guide
+- **Tests:** 31 new tests added; 140 total; 97.37% coverage
+- **Report verified live** with existing audit data — all sections render correctly
+- **Changes pushed to GitHub**

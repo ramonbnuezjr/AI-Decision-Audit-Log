@@ -20,6 +20,7 @@ from src.main import (
     cmd_capture,
     cmd_export,
     cmd_query,
+    cmd_report,
     cmd_summary,
     main,
 )
@@ -541,3 +542,215 @@ class TestMain:
         with pytest.raises(SystemExit) as exc_info:
             main([])
         assert exc_info.value.code != 0
+
+
+# ---------------------------------------------------------------------------
+# cmd_report
+# ---------------------------------------------------------------------------
+
+
+def _make_conn_with_entries() -> sqlite3.Connection:
+    """Return an in-memory DB seeded with a mix of success and error entries."""
+    from src.db.schema import INSERT_SQL
+    from src.models.log_entry import LogEntry, LogStatus
+
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    ensure_schema(conn)
+
+    entries = [
+        LogEntry(
+            id="r1",
+            timestamp="2026-03-22T10:00:00+00:00",
+            session_id="ses-INC001",
+            user_id="ramon",
+            provider="llama_cpp",
+            model="llama-3.2-3b",
+            prompt="Summarize this incident.",
+            response="Summary here.",
+            input_tokens=10,
+            output_tokens=20,
+            latency_ms=2000,
+            status=LogStatus.success,
+            error_message=None,
+        ),
+        LogEntry(
+            id="r2",
+            timestamp="2026-03-22T10:01:00+00:00",
+            session_id="ses-INC001",
+            user_id="ramon",
+            provider="llama_cpp",
+            model="llama-3.2-3b",
+            prompt="Root cause?",
+            response="Network failure.",
+            input_tokens=8,
+            output_tokens=15,
+            latency_ms=8000,
+            status=LogStatus.success,
+            error_message=None,
+        ),
+        LogEntry(
+            id="r3",
+            timestamp="2026-03-22T10:02:00+00:00",
+            session_id="ses-INC002",
+            user_id="analyst",
+            provider="openai",
+            model="gpt-4o",
+            prompt="Priority check.",
+            response=None,
+            input_tokens=None,
+            output_tokens=None,
+            latency_ms=500,
+            status=LogStatus.error,
+            error_message="429 quota exceeded",
+        ),
+    ]
+    for e in entries:
+        conn.execute(INSERT_SQL, e.to_sqlite_row())
+    conn.commit()
+    return conn
+
+
+class TestCmdReport:
+    def test_empty_db_prints_no_entries_message(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        ensure_schema(conn)
+        args = build_parser().parse_args(["report"])
+        with (
+            patch("src.main.get_settings", return_value=_make_settings()),
+            patch("src.main.get_connection") as mock_ctx,
+        ):
+            mock_ctx.return_value.__enter__ = MagicMock(return_value=conn)
+            mock_ctx.return_value.__exit__ = MagicMock(return_value=False)
+            result = cmd_report(args)
+        out = capsys.readouterr().out
+        assert result == 0
+        assert "No entries" in out
+        conn.close()
+
+    def test_report_exits_0_with_data(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        conn = _make_conn_with_entries()
+        args = build_parser().parse_args(["report"])
+        with (
+            patch("src.main.get_settings", return_value=_make_settings()),
+            patch("src.main.get_connection") as mock_ctx,
+        ):
+            mock_ctx.return_value.__enter__ = MagicMock(return_value=conn)
+            mock_ctx.return_value.__exit__ = MagicMock(return_value=False)
+            result = cmd_report(args)
+        assert result == 0
+        conn.close()
+
+    def test_report_shows_incident_log_section(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        conn = _make_conn_with_entries()
+        args = build_parser().parse_args(["report"])
+        with (
+            patch("src.main.get_settings", return_value=_make_settings()),
+            patch("src.main.get_connection") as mock_ctx,
+        ):
+            mock_ctx.return_value.__enter__ = MagicMock(return_value=conn)
+            mock_ctx.return_value.__exit__ = MagicMock(return_value=False)
+            cmd_report(args)
+        out = capsys.readouterr().out
+        assert "INCIDENT LOG" in out
+        conn.close()
+
+    def test_report_shows_provider_health_section(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        conn = _make_conn_with_entries()
+        args = build_parser().parse_args(["report"])
+        with (
+            patch("src.main.get_settings", return_value=_make_settings()),
+            patch("src.main.get_connection") as mock_ctx,
+        ):
+            mock_ctx.return_value.__enter__ = MagicMock(return_value=conn)
+            mock_ctx.return_value.__exit__ = MagicMock(return_value=False)
+            cmd_report(args)
+        out = capsys.readouterr().out
+        assert "PROVIDER HEALTH" in out
+        assert "llama_cpp" in out
+        conn.close()
+
+    def test_report_shows_latency_section(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        conn = _make_conn_with_entries()
+        args = build_parser().parse_args(["report"])
+        with (
+            patch("src.main.get_settings", return_value=_make_settings()),
+            patch("src.main.get_connection") as mock_ctx,
+        ):
+            mock_ctx.return_value.__enter__ = MagicMock(return_value=conn)
+            mock_ctx.return_value.__exit__ = MagicMock(return_value=False)
+            cmd_report(args)
+        out = capsys.readouterr().out
+        assert "LATENCY PROFILE" in out
+        conn.close()
+
+    def test_report_shows_token_burn_section(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        conn = _make_conn_with_entries()
+        args = build_parser().parse_args(["report"])
+        with (
+            patch("src.main.get_settings", return_value=_make_settings()),
+            patch("src.main.get_connection") as mock_ctx,
+        ):
+            mock_ctx.return_value.__enter__ = MagicMock(return_value=conn)
+            mock_ctx.return_value.__exit__ = MagicMock(return_value=False)
+            cmd_report(args)
+        out = capsys.readouterr().out
+        assert "TOKEN BURN" in out
+        conn.close()
+
+    def test_report_shows_session_activity_section(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        conn = _make_conn_with_entries()
+        args = build_parser().parse_args(["report"])
+        with (
+            patch("src.main.get_settings", return_value=_make_settings()),
+            patch("src.main.get_connection") as mock_ctx,
+        ):
+            mock_ctx.return_value.__enter__ = MagicMock(return_value=conn)
+            mock_ctx.return_value.__exit__ = MagicMock(return_value=False)
+            cmd_report(args)
+        out = capsys.readouterr().out
+        assert "SESSION ACTIVITY" in out
+        conn.close()
+
+    def test_report_shows_anomalies_section(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        conn = _make_conn_with_entries()
+        args = build_parser().parse_args(["report"])
+        with (
+            patch("src.main.get_settings", return_value=_make_settings()),
+            patch("src.main.get_connection") as mock_ctx,
+        ):
+            mock_ctx.return_value.__enter__ = MagicMock(return_value=conn)
+            mock_ctx.return_value.__exit__ = MagicMock(return_value=False)
+            cmd_report(args)
+        out = capsys.readouterr().out
+        assert "ANOMALIES" in out
+        conn.close()
+
+    def test_main_report_exits_0(self, capsys: pytest.CaptureFixture[str]) -> None:
+        conn = _make_conn_with_entries()
+        with (
+            patch("src.main.get_settings", return_value=_make_settings()),
+            patch("src.main.get_connection") as mock_ctx,
+        ):
+            mock_ctx.return_value.__enter__ = MagicMock(return_value=conn)
+            mock_ctx.return_value.__exit__ = MagicMock(return_value=False)
+            code = main(["report"])
+        assert code == 0
+        conn.close()

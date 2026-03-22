@@ -1,4 +1,4 @@
-"""Unit tests for all five query functions in src/db/query.py."""
+"""Unit tests for all eight query functions in src/db/query.py."""
 
 from __future__ import annotations
 
@@ -11,7 +11,10 @@ from src.db.query import (
     get_by_session,
     get_by_user,
     get_errors,
+    get_latency_stats,
     get_model_usage_summary,
+    get_provider_health,
+    get_session_activity,
 )
 from src.db.schema import INSERT_SQL
 from src.models.log_entry import LogEntry, LogStatus
@@ -33,6 +36,7 @@ def _make_entry(
     timestamp: str = "2026-01-01T00:00:00+00:00",
     input_tokens: int | None = 10,
     output_tokens: int | None = 5,
+    latency_ms: int = 50,
 ) -> LogEntry:
     return LogEntry(
         id=entry_id,
@@ -45,7 +49,7 @@ def _make_entry(
         response=f"response-{entry_id}" if status == LogStatus.success else None,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
-        latency_ms=50,
+        latency_ms=latency_ms,
         status=status,
         error_message="oops" if status == LogStatus.error else None,
     )
@@ -194,3 +198,158 @@ class TestGetModelUsageSummary:
         rows = get_model_usage_summary(mem_conn)
         counts = [r["total_calls"] for r in rows]
         assert counts == sorted(counts, reverse=True)
+
+
+class TestGetLatencyStats:
+    def test_empty_db_returns_none_values(self, mem_conn: sqlite3.Connection) -> None:
+        result = get_latency_stats(mem_conn)
+        assert result["count"] == 0
+        assert result["p50"] is None
+        assert result["p95"] is None
+        assert result["min"] is None
+        assert result["max"] is None
+
+    def test_excludes_error_rows(self, mem_conn: sqlite3.Connection) -> None:
+        _insert(mem_conn, _make_entry("e1", status=LogStatus.error, latency_ms=9999))
+        result = get_latency_stats(mem_conn)
+        assert result["count"] == 0
+
+    def test_single_entry(self, mem_conn: sqlite3.Connection) -> None:
+        _insert(mem_conn, _make_entry("s1", latency_ms=100))
+        result = get_latency_stats(mem_conn)
+        assert result["count"] == 1
+        assert result["min"] == 100
+        assert result["max"] == 100
+        assert result["p50"] == 100
+        assert result["p95"] == 100
+
+    def test_min_max_accurate(self, mem_conn: sqlite3.Connection) -> None:
+        for i, ms in enumerate([200, 50, 800, 300]):
+            _insert(mem_conn, _make_entry(f"lat{i}", latency_ms=ms))
+        result = get_latency_stats(mem_conn)
+        assert result["min"] == 50
+        assert result["max"] == 800
+
+    def test_p50_is_median(self, mem_conn: sqlite3.Connection) -> None:
+        for i, ms in enumerate([100, 200, 300, 400, 500]):
+            _insert(mem_conn, _make_entry(f"p50e{i}", latency_ms=ms))
+        result = get_latency_stats(mem_conn)
+        assert result["p50"] is not None
+        assert result["p50"] <= 300
+
+    def test_p95_is_higher_than_p50(self, mem_conn: sqlite3.Connection) -> None:
+        for i in range(20):
+            _insert(mem_conn, _make_entry(f"p95e{i}", latency_ms=(i + 1) * 100))
+        result = get_latency_stats(mem_conn)
+        assert result["p95"] is not None
+        assert result["p50"] is not None
+        assert result["p95"] >= result["p50"]
+
+    def test_count_matches_successful_entries(self, mem_conn: sqlite3.Connection) -> None:
+        for i in range(3):
+            _insert(mem_conn, _make_entry(f"ok{i}", latency_ms=100))
+        _insert(mem_conn, _make_entry("err1", status=LogStatus.error, latency_ms=200))
+        result = get_latency_stats(mem_conn)
+        assert result["count"] == 3
+
+
+class TestGetProviderHealth:
+    def test_empty_db_returns_empty_list(self, mem_conn: sqlite3.Connection) -> None:
+        assert get_provider_health(mem_conn) == []
+
+    def test_returns_one_row_per_provider(self, mem_conn: sqlite3.Connection) -> None:
+        _insert(mem_conn, _make_entry("ph1", provider="anthropic"))
+        _insert(mem_conn, _make_entry("ph2", provider="openai"))
+        _insert(mem_conn, _make_entry("ph3", provider="anthropic"))
+        rows = get_provider_health(mem_conn)
+        providers = {r["provider"] for r in rows}
+        assert providers == {"anthropic", "openai"}
+
+    def test_success_rate_100_when_all_succeed(self, mem_conn: sqlite3.Connection) -> None:
+        for i in range(4):
+            _insert(mem_conn, _make_entry(f"sr{i}", provider="openai", status=LogStatus.success))
+        rows = get_provider_health(mem_conn)
+        row = rows[0]
+        assert row["success_rate"] == 100.0
+
+    def test_success_rate_zero_when_all_fail(self, mem_conn: sqlite3.Connection) -> None:
+        for i in range(3):
+            _insert(mem_conn, _make_entry(f"fail{i}", provider="anthropic", status=LogStatus.error))
+        rows = get_provider_health(mem_conn)
+        row = rows[0]
+        assert row["success_rate"] == 0.0
+
+    def test_success_rate_partial(self, mem_conn: sqlite3.Connection) -> None:
+        _insert(mem_conn, _make_entry("ok", provider="openai", status=LogStatus.success))
+        _insert(mem_conn, _make_entry("bad", provider="openai", status=LogStatus.error))
+        rows = get_provider_health(mem_conn)
+        row = rows[0]
+        assert row["success_rate"] == 50.0
+
+    def test_error_calls_count(self, mem_conn: sqlite3.Connection) -> None:
+        _insert(mem_conn, _make_entry("ec1", provider="anthropic", status=LogStatus.error))
+        _insert(mem_conn, _make_entry("ec2", provider="anthropic", status=LogStatus.flagged))
+        _insert(mem_conn, _make_entry("ec3", provider="anthropic", status=LogStatus.success))
+        rows = get_provider_health(mem_conn)
+        row = rows[0]
+        assert row["error_calls"] == 2
+
+    def test_last_error_message_populated(self, mem_conn: sqlite3.Connection) -> None:
+        _insert(mem_conn, _make_entry("em1", provider="openai", status=LogStatus.error))
+        rows = get_provider_health(mem_conn)
+        row = rows[0]
+        assert row["last_error_message"] == "oops"
+
+    def test_last_error_message_none_when_no_errors(
+        self, mem_conn: sqlite3.Connection
+    ) -> None:
+        _insert(mem_conn, _make_entry("ok2", provider="anthropic", status=LogStatus.success))
+        rows = get_provider_health(mem_conn)
+        row = rows[0]
+        assert row["last_error_message"] is None
+
+
+class TestGetSessionActivity:
+    def test_empty_db_returns_empty_list(self, mem_conn: sqlite3.Connection) -> None:
+        assert get_session_activity(mem_conn) == []
+
+    def test_returns_one_row_per_session(self, mem_conn: sqlite3.Connection) -> None:
+        _insert(mem_conn, _make_entry("sa1", session_id="ses-A"))
+        _insert(mem_conn, _make_entry("sa2", session_id="ses-B"))
+        _insert(mem_conn, _make_entry("sa3", session_id="ses-A"))
+        rows = get_session_activity(mem_conn)
+        assert len(rows) == 2
+
+    def test_total_calls_per_session(self, mem_conn: sqlite3.Connection) -> None:
+        for i in range(3):
+            _insert(mem_conn, _make_entry(f"tc{i}", session_id="ses-X"))
+        rows = get_session_activity(mem_conn)
+        assert rows[0]["total_calls"] == 3
+
+    def test_ordered_by_total_calls_desc(self, mem_conn: sqlite3.Connection) -> None:
+        _insert(mem_conn, _make_entry("big1", session_id="big"))
+        _insert(mem_conn, _make_entry("big2", session_id="big"))
+        _insert(mem_conn, _make_entry("big3", session_id="big"))
+        _insert(mem_conn, _make_entry("small1", session_id="small"))
+        rows = get_session_activity(mem_conn)
+        counts = [r["total_calls"] for r in rows]
+        assert counts == sorted(counts, reverse=True)
+
+    def test_error_calls_counted(self, mem_conn: sqlite3.Connection) -> None:
+        _insert(mem_conn, _make_entry("good", session_id="ses-M", status=LogStatus.success))
+        _insert(mem_conn, _make_entry("bad", session_id="ses-M", status=LogStatus.error))
+        rows = get_session_activity(mem_conn)
+        row = rows[0]
+        assert row["error_calls"] == 1
+
+    def test_first_and_last_call_timestamps(self, mem_conn: sqlite3.Connection) -> None:
+        _insert(mem_conn, _make_entry("ts1", session_id="ses-T", timestamp="2026-01-01T08:00:00+00:00"))
+        _insert(mem_conn, _make_entry("ts2", session_id="ses-T", timestamp="2026-01-01T10:00:00+00:00"))
+        rows = get_session_activity(mem_conn)
+        row = rows[0]
+        assert row["first_call"] < row["last_call"]
+
+    def test_user_id_captured(self, mem_conn: sqlite3.Connection) -> None:
+        _insert(mem_conn, _make_entry("uid1", session_id="ses-U", user_id="ramon"))
+        rows = get_session_activity(mem_conn)
+        assert rows[0]["user_id"] == "ramon"

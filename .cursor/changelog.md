@@ -127,3 +127,27 @@ llama_cpp    ./models/llama-3.2-3b-instruct.Q4_K_M.gguf     1    1    0  ← ful
   - `PRD.md` — Product Requirements Document
   - `README.md` — setup and usage guide
 - Source directories: `src/`, `tests/`, `scripts/`, `docs/`
+
+## v0.2.0 — POC Incident Analysis Tooling — 2026-03-22
+
+### Added
+- **`src/db/query.py`** — 3 new analysis query functions:
+  - `get_latency_stats()` — p50, p95, min, max latency across successful calls
+  - `get_provider_health()` — per-provider success rate, error count, last error message
+  - `get_session_activity()` — sessions ranked by call volume with timestamps
+- **`src/main.py`** — `report` subcommand (`python -m src.main report`): structured
+  governance output covering incident log, provider health, latency profile, token burn
+  (with GPT-4o cost estimate), session activity, and latency anomalies
+- **`scripts/run_incidents.py`** — ServiceNow incident runner; accepts JSON or CSV export;
+  runs 5 AI analysis prompts per ticket (summarize, root cause, priority check,
+  remediation, escalation); supports `--dry-run`, `--limit`, `--provider`, `--user-id`
+- **`data/sample_incidents.json`** — 5 synthetic ServiceNow incident tickets for testing
+  (API gateway 503, ML inference latency spike, ITSM OAuth failure, compliance data
+  duplication, LLM prompt injection attempt)
+- **`docs/POC_PLAYBOOK.md`** — two-week POC guide covering ServiceNow export steps,
+  day-by-day run schedule, governance report interpretation, and feature backlog template
+
+### Tests
+- 31 new tests (140 total, up from 109) — `TestGetLatencyStats` (7),
+  `TestGetProviderHealth` (8), `TestGetSessionActivity` (7), `TestCmdReport` (9)
+- Coverage: 97.37% (gate: ≥90%)

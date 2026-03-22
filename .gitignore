@@ -33,6 +33,7 @@ coverage.xml
 
 # Runtime-generated data
 data/
+!data/sample_incidents.json
 *.db
 *.sqlite3
 

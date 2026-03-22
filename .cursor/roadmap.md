@@ -23,6 +23,7 @@
       via Metal GPU (`n_gpu_layers=-1`) — status=success, 1.9 GB model, ~3 GB free headroom
 - [x] Provider incident log documented: Anthropic 401, OpenAI 429, Mistral 7B OOM — all
       captured in audit log and recorded in `changelog.md` / `activity_log.md`
+- [x] POC incident analysis tooling complete (v0.2.0) — report command, incident runner, 140 tests, 97.37% coverage
 - [ ] Pre-commit hooks passing cleanly (black, ruff, mypy, bandit)
 - [ ] `mypy --strict` passing cleanly across all modules
 - [ ] All secrets validated as present at startup; fail fast with clear error message

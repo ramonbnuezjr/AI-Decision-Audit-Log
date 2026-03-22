@@ -1,0 +1,62 @@
+[
+  {
+    "number": "INC0001001",
+    "short_description": "Production API gateway returning 503 errors for all downstream services",
+    "description": "Starting at 14:32 UTC the API gateway cluster began returning HTTP 503 Service Unavailable to all consumers. Health checks show 3 of 5 gateway nodes are in an unhealthy state. Engineering observability dashboard shows connection pool exhaustion on the database proxy layer. Approximately 12,000 API calls per minute are failing. Affected services include the customer-facing mobile app, the partner integration endpoints, and internal microservices. On-call engineer has been paged. No recent deployments in the last 72 hours. Database load metrics appear normal.",
+    "priority": "1 - Critical",
+    "state": "In Progress",
+    "category": "Infrastructure",
+    "assignment_group": "Platform Engineering",
+    "caller": "monitoring-system",
+    "opened_at": "2026-03-22T14:32:00Z",
+    "resolved_at": ""
+  },
+  {
+    "number": "INC0001002",
+    "short_description": "AI model inference endpoint latency spike — p99 exceeding 45 seconds",
+    "description": "The ML inference service handling natural language classification requests has experienced a sustained latency spike since 09:15 UTC. Median latency has increased from 320ms to 4,200ms. P99 latency is 45 seconds, exceeding the SLA threshold of 5 seconds. The spike coincides with a 3x increase in request volume from a newly onboarded enterprise customer. GPU utilization is at 98%. Auto-scaling triggered but new instances are taking longer than expected to warm up. Downstream services that consume classification results are queuing requests. Two upstream clients have already started dropping requests with client-side timeouts. No model updates have been deployed.",
+    "priority": "2 - High",
+    "state": "In Progress",
+    "category": "AI/ML Platform",
+    "assignment_group": "ML Infrastructure",
+    "caller": "sre-oncall",
+    "opened_at": "2026-03-22T09:45:00Z",
+    "resolved_at": ""
+  },
+  {
+    "number": "INC0001003",
+    "short_description": "ServiceNow ITSM integration failing — ticket sync stopped updating",
+    "description": "The automated integration between the internal ticketing system and ServiceNow stopped synchronizing ticket state updates at approximately 22:00 UTC yesterday. Approximately 340 tickets have not had their status, assignment, or resolution fields updated. The integration middleware logs show repeated OAuth token refresh failures with error code 401. The service account credentials were rotated by the IAM team two days ago. The integration team was not notified of the rotation. No customer-facing services are impacted.",
+    "priority": "3 - Moderate",
+    "state": "New",
+    "category": "Integration",
+    "assignment_group": "IT Operations",
+    "caller": "ramon",
+    "opened_at": "2026-03-22T08:10:00Z",
+    "resolved_at": ""
+  },
+  {
+    "number": "INC0001004",
+    "short_description": "Data pipeline producing duplicate records in the compliance audit table",
+    "description": "The nightly ETL pipeline that populates the regulatory compliance audit table has been inserting duplicate records for the past 4 execution cycles. Deduplication logic was disabled as part of a performance optimization last Tuesday. The compliance audit table now contains approximately 18,000 duplicate rows. Downstream quarterly compliance reports draw directly from this table. The next scheduled regulatory submission is in 11 days. The data engineering team has identified the root change but has not assessed whether records can be deduplicated retroactively without losing audit trail integrity.",
+    "priority": "2 - High",
+    "state": "In Progress",
+    "category": "Data & Analytics",
+    "assignment_group": "Data Engineering",
+    "caller": "compliance-team",
+    "opened_at": "2026-03-21T07:00:00Z",
+    "resolved_at": ""
+  },
+  {
+    "number": "INC0001005",
+    "short_description": "LLM prompt injection attempt detected in customer-facing chatbot",
+    "description": "The security monitoring system flagged 47 requests to the customer support chatbot between 11:00 and 11:45 UTC that exhibit characteristics of prompt injection attacks. The requests attempt to override the system prompt. The AI guardrail layer blocked 44 of the 47 attempts. Three requests received partial responses before the output filter triggered. The partial responses did not expose the system prompt but deviated from the intended persona. All requests originated from a single IP address. The chatbot audit log captured all 47 attempts. Security team has been notified and the IP has been rate-limited.",
+    "priority": "2 - High",
+    "state": "In Progress",
+    "category": "Security",
+    "assignment_group": "AI Security",
+    "caller": "security-monitoring",
+    "opened_at": "2026-03-22T11:50:00Z",
+    "resolved_at": ""
+  }
+]
