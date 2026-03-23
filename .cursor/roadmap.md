@@ -24,6 +24,9 @@
 - [x] Provider incident log documented: Anthropic 401, OpenAI 429, Mistral 7B OOM — all
       captured in audit log and recorded in `changelog.md` / `activity_log.md`
 - [x] POC incident analysis tooling complete (v0.2.0) — report command, incident runner, 140 tests, 97.37% coverage
+- [x] First real-world batch run complete (v0.2.1) — 50 POS incidents × 5 prompts = 278 calls,
+      100% success, zero errors, Llama 3.2 3B on M2 Mini Metal GPU; ServiceNow JSON wrapper
+      and field name fixes applied; governance report verified against live data
 - [ ] Pre-commit hooks passing cleanly (black, ruff, mypy, bandit)
 - [ ] `mypy --strict` passing cleanly across all modules
 - [ ] All secrets validated as present at startup; fail fast with clear error message

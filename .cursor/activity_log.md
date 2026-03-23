@@ -103,6 +103,48 @@
 - Docs updated: `changelog.md`, `README.md`, `roadmap.md`, `activity_log.md`
 - Changes pushed to https://github.com/ramonbnuezjr/AI-Decision-Audit-Log
 
+### 2026-03-23 — Real-world POS incident batch run (v0.2.1)
+
+- **Mode:** PRODUCTION
+- **Goal:** Process a live ServiceNow POS incident export through the audit log to
+  generate real governance evidence
+
+#### ServiceNow data ingestion
+- Source: `data/Incident - POS All Sites - 2026.03.22.json` — **5,215 POS incident records**
+  exported directly from production ServiceNow
+- State breakdown: 2,482 In Progress · 1,291 On Hold · 1,195 New · 247 other
+
+#### Script fixes applied before running
+- **JSON wrapper fix:** ServiceNow exports tickets inside `{"records": [...]}` instead of
+  a bare array; `load_tickets()` in `scripts/run_incidents.py` updated to unwrap
+  automatically — no manual preprocessing required
+- **Field name alignment:** Prompt templates updated to use actual ServiceNow field names
+  (`category`, `subcategory`, `close_code`, `close_notes`, `u_root_cause_summary`,
+  numeric `priority`). Draft prompts (priority_check / remediation / escalation) replaced
+  with the five governance-relevant prompts:
+  1. `summarize` — plain-English incident summary
+  2. `root_cause` — root cause hypothesis
+  3. `close_code_suggestion` — recommended ServiceNow close code
+  4. `missing_info` — flag incomplete ticket data
+  5. `pattern_flag` — detect recurring patterns
+
+#### Run results
+- **50 POS incidents processed**, 5 prompts each = **278 llama_cpp calls**
+- **100% success rate** — 0 errors across all 278 inferences on local Llama 3.2 3B
+- Input tokens: 56,641 · Output tokens: 73,319
+- Median inference latency (p50): ~4.6 seconds on M2 Mini Metal GPU
+- Governance report (`python -m src.main report`) confirmed all sections render:
+  provider health, latency profile, token burn, session activity, anomaly detection
+
+#### What the audit log surfaced
+- Local model is the only reliable provider in the current setup: 278/278 success
+- Cloud providers remain partially broken (Anthropic 401, OpenAI 1/2) — captured in log
+- No latency anomalies detected in the local model batch (all calls within 2× median)
+- Pattern: all 50 analyzed tickets are POS-related; category and subcategory fields
+  frequently empty in the export — flagged by the `missing_info` prompt
+
+- **Changes pushed to GitHub** (v0.2.1)
+
 ### 2026-03-22 — POC incident analysis tooling built
 
 - **Mode:** PRODUCTION

@@ -47,49 +47,72 @@ PROMPT_TEMPLATES: list[tuple[str, str]] = [
     (
         "summarize",
         (
-            "You are an IT operations analyst. Summarize the following incident "
-            "ticket in exactly 2 sentences. Be specific about what failed and "
-            "what the business impact was.\n\nIncident: {number}\n"
-            "Description: {short_description}\n\nDetails: {description}"
+            "You are an IT operations analyst. Summarize the following POS "
+            "incident ticket in exactly 2 sentences. Be specific about what "
+            "failed and what the business impact was.\n\n"
+            "Incident: {number}\n"
+            "Category: {category} / {subcategory}\n"
+            "Priority: {priority}\n"
+            "Short description: {short_description}\n\n"
+            "Details: {description}"
         ),
     ),
     (
         "root_cause",
         (
-            "You are a root cause analysis expert. Based on the incident below, "
-            "identify the single most likely root cause in 2–3 sentences.\n\n"
-            "Incident: {number}\nDescription: {short_description}\n\n"
+            "You are a root cause analysis expert. Based on the POS incident "
+            "below, identify the single most likely root cause in 2–3 sentences. "
+            "Be specific — avoid generic answers.\n\n"
+            "Incident: {number}\n"
+            "Category: {category} / {subcategory}\n"
+            "Short description: {short_description}\n\n"
             "Details: {description}"
         ),
     ),
     (
-        "priority_check",
+        "close_code_suggestion",
         (
-            "You are an incident management specialist. The following ticket is "
-            "assigned priority '{priority}'. Evaluate whether this priority is "
-            "correct given the description. Respond with: correct / too high / "
-            "too low, and explain why in 2 sentences.\n\n"
-            "Incident: {number}\nDescription: {short_description}\n\n"
-            "Details: {description}"
+            "You are an ITSM analyst. Based on the POS incident below, suggest "
+            "the most appropriate close code from this list:\n"
+            "  - Resolved by user\n"
+            "  - Resolved by workaround\n"
+            "  - Resolved by fix\n"
+            "  - Duplicate\n"
+            "  - Not reproducible\n"
+            "  - User error\n"
+            "  - Known error\n"
+            "  - Third-party vendor\n\n"
+            "Respond with: the close code name, then one sentence of justification.\n\n"
+            "Incident: {number}\n"
+            "Short description: {short_description}\n\n"
+            "Details: {description}\n\n"
+            "Current close code: {close_code}"
         ),
     ),
     (
-        "remediation",
+        "missing_info",
         (
-            "You are an IT remediation expert. Provide exactly 3 specific, "
-            "actionable remediation steps for the following incident. Number "
-            "each step.\n\nIncident: {number}\nDescription: {short_description}"
-            "\n\nDetails: {description}"
+            "You are a quality assurance analyst reviewing POS incident tickets. "
+            "Review the ticket below and list any critical information that is "
+            "missing or incomplete. Consider: root cause, steps taken, business "
+            "impact, resolution details, affected systems/locations.\n\n"
+            "Incident: {number}\n"
+            "Short description: {short_description}\n"
+            "Details: {description}\n"
+            "Close notes: {close_notes}\n"
+            "Root cause summary: {u_root_cause_summary}"
         ),
     ),
     (
-        "escalation",
+        "pattern_flag",
         (
-            "You are an IT escalation coordinator. Based on this incident, "
-            "should it be escalated beyond the current assignment group "
-            "'{assignment_group}'? Answer yes or no, name who should be "
-            "notified, and give one sentence of justification.\n\n"
-            "Incident: {number}\nDescription: {short_description}\n\n"
+            "You are an IT trend analyst. Based on this single POS incident, "
+            "identify: (1) what type of recurring pattern this might belong to, "
+            "and (2) one specific question that should be answered to determine "
+            "if this is part of a broader systemic issue.\n\n"
+            "Incident: {number}\n"
+            "Category: {category} / {subcategory}\n"
+            "Short description: {short_description}\n\n"
             "Details: {description}"
         ),
     ),
@@ -102,10 +125,15 @@ PROMPT_TEMPLATES: list[tuple[str, str]] = [
 _REQUIRED_FIELDS = {"number", "short_description"}
 _OPTIONAL_FIELDS = {
     "description": "",
-    "priority": "3 - Moderate",
+    "priority": "3",
     "assignment_group": "IT Operations",
-    "category": "Software",
-    "state": "In Progress",
+    "category": "Software/Application",
+    "subcategory": "",
+    "state": "2",
+    "close_code": "",
+    "close_notes": "",
+    "u_root_cause_summary": "",
+    "u_root_cause_category": "",
 }
 
 
@@ -154,9 +182,17 @@ def load_tickets(path: Path) -> list[dict[str, Any]]:
     suffix = path.suffix.lower()
     if suffix == ".json":
         with path.open(encoding="utf-8") as fh:
-            raw_list = json.load(fh)
-        if not isinstance(raw_list, list):
-            raise ValueError("JSON file must contain a top-level array of ticket objects.")
+            raw_data = json.load(fh)
+        # ServiceNow exports wrap the array: {"records": [...]}
+        if isinstance(raw_data, dict) and "records" in raw_data:
+            raw_list = raw_data["records"]
+        elif isinstance(raw_data, list):
+            raw_list = raw_data
+        else:
+            raise ValueError(
+                "JSON file must be a top-level array or a ServiceNow export "
+                "with a top-level 'records' key."
+            )
     elif suffix == ".csv":
         with path.open(encoding="utf-8", newline="") as fh:
             reader = csv.DictReader(fh)

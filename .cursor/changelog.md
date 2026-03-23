@@ -5,6 +5,38 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## v0.2.1 — Real-World POS Incident Batch Run — 2026-03-23
+
+### Added
+- **First real-world data run** — processed 50 POS incident tickets from a live ServiceNow
+  export (`Incident - POS All Sites - 2026.03.22.json`, 5,215 total records):
+  - 5 AI analysis prompts per ticket (summarize, root_cause, close_code_suggestion,
+    missing_info, pattern_flag)
+  - **278 total llama_cpp calls across 52 sessions — 100% success rate, 0 errors**
+  - 56,641 input tokens / 73,319 output tokens consumed
+  - Median latency (p50) ~4.6 seconds per inference on M2 Mini 8 GB Metal GPU
+
+### Fixed
+- **`scripts/run_incidents.py` — ServiceNow JSON wrapper compatibility**
+  - ServiceNow JSON exports wrap the record array in `{"records": [...]}` rather than
+    being a bare array; `load_tickets()` now unwraps this automatically
+  - Both bare-array JSON and `records`-wrapped JSON are now supported
+- **`scripts/run_incidents.py` — Prompt template field name alignment**
+  - Updated `_OPTIONAL_FIELDS` and `PROMPT_TEMPLATES` to use actual ServiceNow export
+    field names: `category`, `subcategory`, `priority` (numeric code), `close_code`,
+    `close_notes`, `u_root_cause_summary`
+  - Replaced draft prompts (priority_check, remediation, escalation) with the five
+    governance-relevant prompts: **summarize, root_cause, close_code_suggestion,
+    missing_info, pattern_flag**
+
+### Live Audit Log State (post-session)
+```
+PROVIDER     MODEL                                            CALLS    OK   ERR
+llama_cpp    ./models/llama-3.2-3b-instruct.Q4_K_M.gguf       278   278     0
+anthropic    claude-sonnet-4-20250514                            4     0     4  ← auth (unresolved)
+openai       gpt-4o                                              2     1     1  ← 1 quota, 1 success
+```
+
 ## v0.1.2 — Local Model Integration & Provider Incident Log — 2026-03-22
 
 ### Added

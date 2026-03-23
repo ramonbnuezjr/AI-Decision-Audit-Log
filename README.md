@@ -1,7 +1,7 @@
 # AI Decision Audit Log
 
-[![Tests](https://img.shields.io/badge/tests-109%20passed-brightgreen)](https://github.com/ramonbnuezjr/AI-Decision-Audit-Log)
-[![Coverage](https://img.shields.io/badge/coverage-98.35%25-brightgreen)](https://github.com/ramonbnuezjr/AI-Decision-Audit-Log)
+[![Tests](https://img.shields.io/badge/tests-140%20passed-brightgreen)](https://github.com/ramonbnuezjr/AI-Decision-Audit-Log)
+[![Coverage](https://img.shields.io/badge/coverage-97.37%25-brightgreen)](https://github.com/ramonbnuezjr/AI-Decision-Audit-Log)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
@@ -140,13 +140,43 @@ python -m src.main export --format json --output ./audit_export.json
 
 ```bash
 python -m src.main summary
-# PROVIDER     MODEL                                        CALLS    OK   ERR   IN TOK  OUT TOK
-# anthropic    claude-sonnet-4-20250514                         4     0     4        0        0
-# openai       gpt-4o                                           2     1     1       19       38
-# llama_cpp    ./models/llama-3.2-3b-instruct.Q4_K_M.gguf      1     1     0       13      270
+# PROVIDER     MODEL                                            CALLS    OK   ERR    IN TOK   OUT TOK
+# llama_cpp    ./models/llama-3.2-3b-instruct.Q4_K_M.gguf       278   278     0     56641     73319
+# anthropic    claude-sonnet-4-20250514                            4     0     4         0         0
+# openai       gpt-4o                                              2     1     1        19        38
 ```
 
 Notice that failed calls (errors) are recorded too — every attempt is audited regardless of outcome.
+
+### Governance report
+
+```bash
+python -m src.main report
+```
+
+Displays a full governance report covering:
+- **Provider health** — success rate, error count, last error per provider
+- **Latency profile** — p50/p95/min/max across all successful calls
+- **Token burn** — total input/output tokens with a GPT-4o cost estimate
+- **Session activity** — top sessions by call volume, with user and time window
+- **Anomalies** — calls with latency more than 2× the median flagged for review
+
+### Run ServiceNow incident analysis (POC)
+
+```bash
+# Analyse 50 tickets from a ServiceNow JSON export via the local model
+python scripts/run_incidents.py \
+  --input "data/Incident - POS All Sites - 2026.03.22.json" \
+  --limit 50 --max-tokens 300
+
+# Dry-run (preview prompts without hitting the model)
+python scripts/run_incidents.py --input data/my_export.json --dry-run --limit 5
+```
+
+Each ticket is sent through five AI analysis prompts — `summarize`, `root_cause`,
+`close_code_suggestion`, `missing_info`, `pattern_flag` — and every response is
+persisted to the audit log automatically. Supports JSON exports from ServiceNow
+(both bare arrays and the `{"records": [...]}` wrapper format).
 
 ## Environment Variables
 
@@ -190,22 +220,29 @@ CREATE TABLE audit_log (
 
 ```
 src/
-├── main.py              # CLI entrypoint (capture | query | export | summary)
+├── main.py              # CLI entrypoint (capture | query | export | summary | report)
 ├── config.py            # pydantic-settings BaseSettings
 ├── models/
 │   └── log_entry.py     # LogEntry Pydantic model + LogStatus enum
 ├── db/
 │   ├── schema.py        # DDL + ensure_schema()
 │   ├── connection.py    # sqlite3 context manager
-│   └── query.py         # 5 query utility functions
+│   └── query.py         # 8 query functions incl. latency_stats, provider_health, session_activity
 ├── audit/
 │   └── logger.py        # AuditLogger — pre/post hooks, writes every call
 └── agent/
     └── agent.py         # Routes Anthropic / OpenAI / llama_cpp through AuditLogger
 
+scripts/
+├── run_incidents.py     # ServiceNow incident runner — 5 prompts/ticket, JSON/CSV input
+└── sample_incidents.json  # 5 synthetic tickets for smoke testing
+
+docs/
+└── POC_PLAYBOOK.md      # Two-week POC guide (ServiceNow export → governance report)
+
 tests/
 ├── conftest.py          # In-memory DB fixtures, mock provider responses
-├── unit/                # 5 unit test modules
+├── unit/                # 6 unit test modules (140 tests total)
 └── integration/         # Agent end-to-end tests with mocked SDKs
 ```
 
