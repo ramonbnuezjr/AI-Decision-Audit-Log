@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synthetic Sentinel · AI Governance</title>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ─── Design tokens ─────────────────────────────────────────────────── */
+:root {
+  --surface:    #060e20;
+  --surf-low:   #091328;
+  --surf-mid:   #0d1a30;
+  --surf-high:  #192540;
+  --primary:    #a7a5ff;
+  --secondary:  #53ddfc;
+  --error:      #ff6e84;
+  --text:       #dee5ff;
+  --muted:      #a3aac4;
+  --outline:    #40485d;
+  --sidebar-w:  210px;
+  --topnav-h:   48px;
+}
+
+/* ─── Reset ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  background: var(--surface);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+a { text-decoration: none; color: inherit; }
+
+/* ─── Top navigation bar ─────────────────────────────────────────────── */
+.topnav {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: var(--topnav-h);
+  background: var(--surf-low);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 1.5rem;
+  z-index: 100;
+  border-bottom: 1px solid rgba(64,72,93,0.3);
+}
+.topnav-brand {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.04em;
+}
+.topnav-tabs {
+  display: flex; gap: 0.25rem;
+}
+.topnav-tab {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted);
+  padding: 0.3rem 0.9rem;
+  border-radius: 2px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: color 0.15s, background 0.15s;
+}
+.topnav-tab:hover { color: var(--text); background: rgba(167,165,255,0.08); }
+.topnav-tab.active {
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary);
+}
+.topnav-icons {
+  display: flex; align-items: center; gap: 1rem;
+}
+.topnav-icon {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--surf-high);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.8rem;
+  transition: background 0.15s;
+}
+.topnav-icon:hover { background: var(--surf-mid); color: var(--text); }
+.avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem; font-weight: 700; color: #1c00a0;
+  cursor: pointer;
+}
+
+/* ─── Shell layout ───────────────────────────────────────────────────── */
+.shell {
+  display: flex;
+  padding-top: var(--topnav-h);
+  min-height: 100vh;
+}
+
+/* ─── Sidebar ────────────────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--surf-low);
+  display: flex;
+  flex-direction: column;
+  padding: 1.4rem 0;
+  position: fixed;
+  top: var(--topnav-h);
+  bottom: 0;
+  overflow-y: auto;
+  border-right: 1px solid rgba(64,72,93,0.15);
+}
+.sidebar-brand {
+  padding: 0 1.2rem 1.2rem;
+  border-bottom: 1px solid rgba(64,72,93,0.2);
+  margin-bottom: 1rem;
+}
+.sidebar-brand-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.sidebar-brand-sub {
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 0.15rem;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+}
+.nav-item:hover { color: var(--text); background: rgba(167,165,255,0.06); }
+.nav-item.active {
+  color: var(--text);
+  background: rgba(167,165,255,0.08);
+  border-left-color: var(--primary);
+}
+.nav-icon {
+  width: 16px; text-align: center;
+  font-size: 0.75rem; opacity: 0.8;
+}
+.nav-pip {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--secondary);
+  margin-left: auto;
+}
+.sidebar-footer {
+  margin-top: auto;
+  padding: 1rem 1.2rem;
+  border-top: 1px solid rgba(64,72,93,0.2);
+  display: flex; align-items: center; gap: 0.7rem;
+}
+.footer-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem; font-weight: 700; color: #1c00a0;
+  flex-shrink: 0;
+}
+.footer-name {
+  font-size: 0.72rem; font-weight: 600; color: var(--text);
+}
+.footer-sub {
+  font-size: 0.6rem; color: var(--muted);
+}
+
+/* ─── Main content ───────────────────────────────────────────────────── */
+.main {
+  flex: 1;
+  margin-left: var(--sidebar-w);
+  padding: 2rem 2.5rem 3rem;
+  max-width: calc(100vw - var(--sidebar-w));
+}
+
+/* ─── Page header ────────────────────────────────────────────────────── */
+.page-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(64,72,93,0.15);
+}
+.page-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.2rem; font-weight: 700;
+  color: var(--text); line-height: 1.1;
+}
+.page-subtitle {
+  font-size: 0.78rem; color: var(--muted); margin-top: 0.35rem;
+  max-width: 420px; line-height: 1.5;
+}
+.status-pill {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.65rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 0.35rem 0.9rem;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.status-pill.ok {
+  background: rgba(83,221,252,0.08);
+  border: 1px solid var(--secondary);
+  color: var(--secondary);
+}
+.status-pill.warn {
+  background: rgba(255,110,132,0.08);
+  border: 1px solid var(--error);
+  color: var(--error);
+}
+.status-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+/* ─── Section label ──────────────────────────────────────────────────── */
+.section-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.95rem; font-weight: 600;
+  color: var(--primary);
+  letter-spacing: 0.04em;
+  margin: 2rem 0 1rem;
+  display: flex; align-items: center; gap: 0.6rem;
+}
+.section-label .badge {
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em;
+  padding: 0.15rem 0.5rem; border-radius: 2px;
+}
+.badge-error { background: rgba(255,110,132,0.15); color: var(--error); }
+.badge-ok    { background: rgba(83,221,252,0.12); color: var(--secondary); }
+
+/* ─── KPI grid ───────────────────────────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+.kpi-card {
+  background: var(--surf-high);
+  border-radius: 2px;
+  padding: 1.4rem 1.6rem 1.2rem;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+.kpi-label {
+  font-size: 0.62rem; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 0.5rem;
+}
+.kpi-value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 3rem; font-weight: 700;
+  color: var(--text); line-height: 1;
+  display: flex; align-items: center; gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.kpi-err-badge {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.58rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  background: var(--error); color: #fff;
+  padding: 0.2rem 0.45rem; border-radius: 2px;
+  vertical-align: middle;
+}
+.kpi-sub {
+  font-size: 0.65rem; color: var(--muted); margin-top: 0.5rem;
+}
+
+/* ─── Middle row: provider + latency + token ─────────────────────────── */
+.middle-row {
+  display: grid;
+  grid-template-columns: 2fr 2.2fr 1.6fr;
+  gap: 1rem;
+}
+.card {
+  background: var(--surf-high);
+  border-radius: 2px;
+  padding: 1.2rem 1.4rem;
+}
+.card-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem; font-weight: 600;
+  color: var(--text); margin-bottom: 1rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-title-muted {
+  font-size: 0.62rem; color: var(--muted);
+  font-family: 'Inter', sans-serif; font-weight: 400;
+}
+
+/* provider pips */
+.pip-row {
+  display: flex; align-items: center; gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+.pip-row:last-child { margin-bottom: 0; }
+.pip-name {
+  font-size: 0.72rem; color: var(--text);
+  min-width: 76px; font-weight: 500;
+}
+.pip-tiles {
+  display: flex; flex-wrap: wrap; gap: 3px; flex: 1;
+}
+.pip { width: 10px; height: 10px; border-radius: 1px; flex-shrink: 0; }
+.pip-ok  { background: var(--secondary); }
+.pip-err { background: var(--error); }
+.pip-badge {
+  font-size: 0.58rem; font-weight: 700; letter-spacing: 0.1em;
+  padding: 0.12rem 0.4rem; border-radius: 2px; white-space: nowrap;
+}
+.pip-badge.active  { border: 1px solid var(--secondary); color: var(--secondary); }
+.pip-badge.blocked { border: 1px solid var(--error);     color: var(--error); }
+.pip-badge.partial { border: 1px solid #f59e0b;          color: #f59e0b; }
+
+/* latency bars */
+.lat-row { margin-bottom: 0.9rem; }
+.lat-row:last-child { margin-bottom: 0; }
+.lat-meta {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 0.3rem;
+}
+.lat-label { font-size: 0.68rem; color: var(--muted); }
+.lat-val   { font-size: 0.72rem; color: var(--text); font-family: 'Space Grotesk', sans-serif; }
+.lat-bar-bg {
+  height: 5px; background: rgba(64,72,93,0.35); border-radius: 1px; overflow: hidden;
+}
+.lat-bar-fill { height: 100%; border-radius: 1px; transition: width 0.6s ease; }
+
+/* token donut */
+#chart-token { height: 180px; }
+.token-legend {
+  margin-top: 0.6rem;
+  display: flex; flex-direction: column; gap: 0.35rem;
+}
+.token-legend-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.65rem; color: var(--muted);
+}
+.token-legend-dot { width: 8px; height: 8px; border-radius: 1px; flex-shrink: 0; }
+.token-legend-val { margin-left: auto; font-family: 'Space Grotesk', sans-serif; color: var(--text); }
+
+/* ─── Bottom row: sessions + incidents ───────────────────────────────── */
+.bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* session table */
+.ss-table { width: 100%; border-collapse: collapse; }
+.ss-table thead th {
+  font-size: 0.6rem; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); padding: 0 0 0.7rem;
+  text-align: left; border: none;
+}
+.ss-table tbody tr { border-top: 1px solid rgba(64,72,93,0.1); }
+.ss-table tbody td {
+  font-size: 0.72rem; color: var(--text);
+  padding: 0.55rem 0; border: none;
+}
+.ss-table .mono { font-family: 'Space Grotesk', monospace; color: var(--muted); font-size: 0.66rem; }
+.ss-table .ok   { color: var(--secondary); font-weight: 600; }
+.ss-table .err-val { color: var(--error); font-weight: 600; }
+
+/* incident cards */
+.incident-card {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 1rem;
+  border-left: 3px solid var(--error);
+  background: var(--surf-mid);
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0 2px 2px 0;
+  transition: background 0.15s;
+}
+.incident-card:hover { background: rgba(25,37,64,0.9); }
+.incident-code {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.68rem; font-weight: 700;
+  color: var(--error); letter-spacing: 0.08em;
+  text-transform: uppercase; margin-bottom: 0.2rem;
+}
+.incident-msg {
+  font-size: 0.7rem; color: var(--muted); line-height: 1.4;
+}
+.incident-provider {
+  font-size: 0.6rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--outline); margin-right: 0.4rem;
+}
+.incident-ts {
+  font-family: 'Space Grotesk', monospace;
+  font-size: 0.64rem; color: var(--muted);
+  white-space: nowrap; flex-shrink: 0;
+}
+
+/* ─── Calls over time ────────────────────────────────────────────────── */
+#chart-timeline { height: 200px; }
+
+/* ─── Loading skeleton ───────────────────────────────────────────────── */
+.loading {
+  display: flex; align-items: center; justify-content: center;
+  height: 60vh;
+  flex-direction: column; gap: 1rem;
+}
+.spinner {
+  width: 32px; height: 32px;
+  border: 2px solid rgba(167,165,255,0.2);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+  font-size: 0.75rem; color: var(--muted);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+/* ─── Refresh indicator ──────────────────────────────────────────────── */
+.refresh-bar {
+  position: fixed; top: var(--topnav-h); left: var(--sidebar-w); right: 0;
+  height: 2px; background: transparent; z-index: 99;
+}
+.refresh-bar.loading {
+  background: linear-gradient(90deg, var(--primary), var(--secondary), var(--primary));
+  background-size: 200%;
+  animation: shimmer 1.2s infinite;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+</style>
+</head>
+<body>
+
+<!-- ─── Top nav ─────────────────────────────────────────────────────── -->
+<nav class="topnav">
+  <span class="topnav-brand">Synthetic Sentinel</span>
+  <div class="topnav-tabs">
+    <span class="topnav-tab">System Status</span>
+    <span class="topnav-tab active">Health Pips</span>
+    <span class="topnav-tab">Analytics</span>
+  </div>
+  <div class="topnav-icons">
+    <div class="topnav-icon" title="Notifications">&#9901;</div>
+    <div class="avatar" title="Admin">AA</div>
+  </div>
+</nav>
+
+<!-- ─── Refresh bar ──────────────────────────────────────────────────── -->
+<div class="refresh-bar" id="refresh-bar"></div>
+
+<!-- ─── Shell ───────────────────────────────────────────────────────── -->
+<div class="shell">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-title">AI Governance</div>
+      <div class="sidebar-brand-sub">Command Center</div>
+    </div>
+
+    <nav>
+      <div class="nav-item">
+        <span class="nav-icon">&#9783;</span> Audit Log
+      </div>
+      <div class="nav-item active">
+        <span class="nav-icon">&#9632;</span> Health
+        <span class="nav-pip" id="nav-pip"></span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">&#9741;</span> Analytics
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">&#9881;</span> Settings
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="footer-avatar">AA</div>
+      <div>
+        <div class="footer-name">Admin_Alpha</div>
+        <div class="footer-sub">Sentinel Protocol v0.2</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main" id="main">
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">Loading audit data&hellip;</div>
+    </div>
+    <div id="content" style="display:none"></div>
+  </main>
+</div>
+
+<script>
+// ── Design tokens (mirrored in JS for Plotly) ─────────────────────────
+const C = {
+  surface:  '#060e20',
+  surfHigh: '#192540',
+  surfMid:  '#0d1a30',
+  primary:  '#a7a5ff',
+  secondary:'#53ddfc',
+  error:    '#ff6e84',
+  text:     '#dee5ff',
+  muted:    '#a3aac4',
+  outline:  '#40485d',
+};
+
+// ── Plotly base layout ────────────────────────────────────────────────
+const plotBase = (h=200) => ({
+  paper_bgcolor: C.surfHigh,
+  plot_bgcolor:  C.surfHigh,
+  height: h,
+  margin: {t:10, b:10, l:8, r:8},
+  font:  {family:'Inter,sans-serif', color:C.muted, size:11},
+  xaxis: {gridcolor:'rgba(64,72,93,0.2)', zerolinecolor:'rgba(64,72,93,0.25)', tickfont:{color:C.muted}},
+  yaxis: {gridcolor:'rgba(64,72,93,0.2)', zerolinecolor:'rgba(64,72,93,0.25)', tickfont:{color:C.muted}},
+  showlegend: false,
+});
+
+// ── Error code extractor ──────────────────────────────────────────────
+function errorCode(msg) {
+  const labels = {
+    '401':'401 UNAUTHORIZED', '403':'403 FORBIDDEN',
+    '429':'429 RATE LIMIT EXCEEDED', '500':'500 INTERNAL SERVER ERROR',
+    '503':'503 SERVICE UNAVAILABLE',
+  };
+  const m = (msg||'').match(/(\d{3})/);
+  if (m) return labels[m[1]] || `${m[1]} ERROR`;
+  if (/quota/i.test(msg))  return 'QUOTA EXCEEDED';
+  if (/auth|key/i.test(msg)) return 'AUTH FAILURE';
+  return 'ERROR';
+}
+
+// ── Render ────────────────────────────────────────────────────────────
+function render(d) {
+  const s = d.summary;
+  const errCount  = s.error_count;
+  const hasErrors = errCount > 0;
+  const tokLabel  = s.total_tokens >= 1000 ? `${(s.total_tokens/1000).toFixed(0)}k` : s.total_tokens;
+
+  // ─ status pill
+  const pillHtml = hasErrors
+    ? `<div class="status-pill warn"><span class="status-dot" style="background:${C.error}"></span>${errCount} Incident${errCount!==1?'s':''} Active</div>`
+    : `<div class="status-pill ok"><span class="status-dot" style="background:${C.secondary}"></span>Systems Nominal</div>`;
+
+  // ─ nav pip color
+  document.getElementById('nav-pip').style.background = hasErrors ? C.error : C.secondary;
+
+  // ─ KPI cards
+  const errBadge = errCount > 0 ? `<span class="kpi-err-badge">${errCount} ERROR${errCount!==1?'S':''}</span>` : '';
+  const kpiHtml = `
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Calls</div>
+        <div class="kpi-value">${s.total_calls.toLocaleString()}${errBadge}</div>
+        <div class="kpi-sub">${s.success_calls.toLocaleString()} succeeded &nbsp;·&nbsp; ${errCount} failed</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Success Rate</div>
+        <div class="kpi-value">${s.success_rate}%</div>
+        <div class="kpi-sub">across all providers</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Total Tokens</div>
+        <div class="kpi-value">${tokLabel} <span style="font-size:0.8rem;color:${C.muted}">${s.total_tokens.toLocaleString()} raw</span></div>
+        <div class="kpi-sub">${s.total_in.toLocaleString()} in &nbsp;/&nbsp; ${s.total_out.toLocaleString()} out</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Estimated Cost</div>
+        <div class="kpi-value">$${s.est_cost.toFixed(4)}</div>
+        <div class="kpi-sub">GPT-4o cloud pricing</div>
+      </div>
+    </div>`;
+
+  // ─ Provider pip rows
+  const pipColors = [C.secondary, C.primary, '#f59e0b'];
+  let providerHtml = '';
+  d.health.forEach(row => {
+    const pips = Array(Math.min(row.success_calls, 100)).fill(`<div class="pip pip-ok"></div>`).join('')
+               + Array(Math.min(row.error_calls,   30)).fill(`<div class="pip pip-err"></div>`).join('');
+    const badgeCls = row.success_rate===100 ? 'active' : row.success_rate===0 ? 'blocked' : 'partial';
+    const badgeTxt = row.success_rate===100 ? 'Active' : row.success_rate===0 ? 'Blocked' : `${Math.round(row.success_rate)}% OK`;
+    providerHtml += `
+      <div class="pip-row">
+        <span class="pip-name">${row.provider}</span>
+        <div class="pip-tiles">${pips}</div>
+        <span class="pip-badge ${badgeCls}">${badgeTxt}</span>
+      </div>`;
+  });
+
+  // ─ Latency bars (inline CSS bars, not Plotly)
+  const lat = d.latency;
+  let latHtml = '<div style="font-size:0.65rem;color:var(--muted)">No successful calls yet.</div>';
+  if (lat.count > 0) {
+    const max = lat.max || 1;
+    const bars = [
+      {label:'P50 Median', val:lat.p50, color:C.secondary},
+      {label:'P95 Tail',   val:lat.p95, color:C.primary},
+      {label:'MAX Spike',  val:lat.max, color:C.error},
+    ];
+    latHtml = bars.map(b => `
+      <div class="lat-row">
+        <div class="lat-meta">
+          <span class="lat-label">${b.label}</span>
+          <span class="lat-val">${b.val ? b.val.toLocaleString()+'ms' : '—'}</span>
+        </div>
+        <div class="lat-bar-bg">
+          <div class="lat-bar-fill" style="width:${b.val ? Math.round(b.val/max*100) : 0}%;background:${b.color}"></div>
+        </div>
+      </div>`).join('');
+    latHtml += `<div style="font-size:0.62rem;color:${C.muted};margin-top:0.7rem">${lat.count.toLocaleString()} successful calls &nbsp;·&nbsp; min ${lat.min?.toLocaleString()}ms</div>`;
+  }
+
+  // ─ Session table rows
+  const sesRows = d.sessions.slice(0,10).map(r => {
+    const sid   = r.session_id.length > 22 ? r.session_id.slice(0,22)+'…' : r.session_id;
+    const first = r.first_call ? r.first_call.slice(11,16) : '—';
+    const errCell = r.error_calls > 0 ? `<span class="err-val">${r.error_calls}</span>` : '0';
+    return `<tr>
+      <td class="mono">${sid}</td>
+      <td>${r.user_id || '—'}</td>
+      <td class="ok">${first}</td>
+      <td>${r.total_calls}</td>
+      <td>${errCell}</td>
+    </tr>`;
+  }).join('');
+
+  // ─ Incident cards
+  let incHtml = `<div style="background:${C.surfMid};border-left:3px solid ${C.secondary};padding:0.8rem 1rem;border-radius:0 2px 2px 0;font-size:0.72rem;color:${C.secondary};">No errors recorded.</div>`;
+  if (d.errors.length > 0) {
+    incHtml = d.errors.slice(0,8).map(e => {
+      const code = errorCode(e.error_message);
+      const msg  = (e.error_message||'').slice(0,120);
+      const ts   = e.timestamp.slice(11,19);
+      const sid  = (e.session_id||'').slice(0,18);
+      return `
+        <div class="incident-card">
+          <div>
+            <div class="incident-code">${code}</div>
+            <div class="incident-msg"><span class="incident-provider">${e.provider}</span>${msg}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="incident-ts">${ts}</div>
+            <div class="incident-ts" style="font-size:0.58rem;margin-top:0.15rem">${sid}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ─ Assemble HTML
+  document.getElementById('content').innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Oversight Dashboard</div>
+        <div class="page-subtitle">Real-time governance telemetry for distributed neural models and inference endpoints.</div>
+      </div>
+      ${pillHtml}
+    </div>
+
+    ${kpiHtml}
+
+    <div class="section-label">
+      Provider Health
+      <span style="font-size:0.62rem;color:${C.muted};font-family:Inter;font-weight:400;letter-spacing:0">
+        ${d.health.length} provider${d.health.length!==1?'s':''}
+      </span>
+    </div>
+    <div class="middle-row">
+      <div class="card">
+        <div class="card-title">Provider Health<span class="card-title-muted">pip view</span></div>
+        ${providerHtml}
+      </div>
+      <div class="card">
+        <div class="card-title">Latency Profile (ms)</div>
+        ${latHtml}
+      </div>
+      <div class="card">
+        <div class="card-title">Token Burn</div>
+        <div id="chart-token"></div>
+        <div class="token-legend" id="token-legend"></div>
+      </div>
+    </div>
+
+    <div class="section-label">
+      Session Activity
+      <span style="font-size:0.62rem;color:${C.muted};font-family:Inter;font-weight:400;letter-spacing:0">
+        ${d.sessions.length} sessions
+      </span>
+    </div>
+    <div class="bottom-row">
+      <div class="card">
+        <div class="card-title">
+          Session Activity
+          <span class="card-title-muted" style="cursor:pointer;color:${C.primary}">View all →</span>
+        </div>
+        <table class="ss-table">
+          <thead><tr>
+            <th>Session ID</th><th>User</th><th>First Call</th><th>Calls</th><th>Errors</th>
+          </tr></thead>
+          <tbody>${sesRows}</tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">
+          Incident Log
+          <span class="badge ${d.errors.length>0?'badge-error':'badge-ok'}">
+            ${d.errors.length > 0 ? '● '+d.errors.length+' Active' : '● Clear'}
+          </span>
+        </div>
+        ${incHtml}
+      </div>
+    </div>
+
+    <div class="section-label">Calls Over Time</div>
+    <div class="card" style="padding:1rem 1.4rem 0.5rem">
+      <div id="chart-timeline"></div>
+    </div>
+
+    <div style="margin-top:2.5rem;padding-top:1rem;border-top:1px solid rgba(64,72,93,0.15);
+         font-size:0.62rem;color:${C.muted};letter-spacing:0.06em;">
+      AI DECISION AUDIT LOG &nbsp;·&nbsp; GOVERNANCE PRIMITIVE &nbsp;·&nbsp;
+      <a href="https://github.com/ramonbnuezjr/AI-Decision-Audit-Log" style="color:${C.muted}">
+        github.com/ramonbnuezjr
+      </a> &nbsp;·&nbsp;
+      <span id="last-refresh"></span>
+    </div>`;
+
+  // ─ Token donut chart (Plotly)
+  const tokRows = d.usage.filter(r => (r.total_input_tokens + r.total_output_tokens) > 0);
+  if (tokRows.length > 0) {
+    const tokenColors = [C.primary, C.secondary, C.error, '#f59e0b'];
+    const total = tokRows.reduce((s,r) => s + r.total_input_tokens + r.total_output_tokens, 0);
+    Plotly.newPlot('chart-token', [{
+      type: 'pie',
+      labels: tokRows.map(r => r.provider),
+      values: tokRows.map(r => r.total_input_tokens + r.total_output_tokens),
+      hole: 0.6,
+      marker: {colors: tokenColors.slice(0, tokRows.length), line:{width:0}},
+      textinfo: 'none',
+      hovertemplate: '%{label}: %{value:,}<extra></extra>',
+    }], {
+      ...plotBase(170),
+      annotations: [{
+        text: `${Math.round(total/1000)}k`,
+        x: 0.5, y: 0.5, showarrow: false,
+        font: {family:'Space Grotesk', size:20, color:C.text},
+      }],
+      margin: {t:4, b:4, l:4, r:4},
+    }, {displayModeBar: false, responsive: true});
+
+    // legend
+    document.getElementById('token-legend').innerHTML = tokRows.map((r,i) => `
+      <div class="token-legend-row">
+        <div class="token-legend-dot" style="background:${tokenColors[i]}"></div>
+        <span>${r.provider}</span>
+        <span class="token-legend-val">${(r.total_input_tokens+r.total_output_tokens).toLocaleString()}</span>
+      </div>`).join('');
+  }
+
+  // ─ Calls over time (Plotly)
+  if (d.timeline.length > 0) {
+    const hours = d.timeline.map(t => t.hour.replace('T',' ') + ':00');
+    const calls = d.timeline.map(t => t.calls);
+    Plotly.newPlot('chart-timeline',
+      [{
+        x: hours, y: calls,
+        type: d.timeline.length > 1 ? 'scatter' : 'bar',
+        mode: d.timeline.length > 1 ? 'lines+markers' : undefined,
+        line:   {color: C.secondary, width: 2},
+        marker: {color: C.primary, size: 5},
+        fill: d.timeline.length > 1 ? 'tozeroy' : undefined,
+        fillcolor: 'rgba(83,221,252,0.06)',
+        marker_color: C.secondary,
+      }],
+      {...plotBase(190), margin:{t:8,b:30,l:8,r:8}},
+      {displayModeBar: false, responsive: true}
+    );
+  }
+
+  // ─ timestamp
+  document.getElementById('last-refresh').textContent =
+    'Last refresh: ' + new Date().toLocaleTimeString();
+}
+
+// ── Fetch and render ──────────────────────────────────────────────────
+async function fetchData() {
+  const bar = document.getElementById('refresh-bar');
+  bar.classList.add('loading');
+  try {
+    const res  = await fetch('/api/data');
+    const data = await res.json();
+    if (data.empty) {
+      document.getElementById('loading').innerHTML =
+        '<div class="loading-text">No audit log entries yet. Run a capture first.</div>';
+      return;
+    }
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+    render(data);
+  } catch(e) {
+    document.getElementById('loading').innerHTML =
+      `<div class="loading-text" style="color:var(--error)">Failed to load: ${e.message}</div>`;
+  } finally {
+    bar.classList.remove('loading');
+  }
+}
+
+fetchData();
+setInterval(fetchData, 30000);  // auto-refresh every 30 s
+</script>
+</body>
+</html>

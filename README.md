@@ -178,7 +178,29 @@ Each ticket is sent through five AI analysis prompts — `summarize`, `root_caus
 persisted to the audit log automatically. Supports JSON exports from ServiceNow
 (both bare arrays and the `{"records": [...]}` wrapper format).
 
-## Governance Dashboard
+## Governance Dashboard (Synthetic Sentinel)
+
+Two dashboard options are available. **Option A (recommended)** is a full-fidelity
+FastAPI server with a pixel-accurate HTML/CSS/JS frontend matching the Synthetic Sentinel
+design. **Option B** is the lightweight Streamlit version.
+
+### Option A — FastAPI server (full design fidelity)
+
+```bash
+# Install server extras
+pip install -e ".[server]"
+
+# Start the server
+uvicorn dashboard.server:app --reload --port 8000
+# Open http://localhost:8000
+```
+
+Features: fixed top navigation bar, sidebar with nav items and active states, exact
+3-column middle panel (Provider Health pips · Latency bars · Token burn donut),
+side-by-side Session Activity and Incident Log, auto-refresh every 30 seconds.
+No Node.js or build step required — single HTML file served by FastAPI.
+
+### Option B — Streamlit (rapid prototyping)
 
 A local Streamlit dashboard visualises the full audit log in a browser tab.
 
@@ -262,6 +284,8 @@ src/
     └── agent.py         # Routes Anthropic / OpenAI / llama_cpp through AuditLogger
 
 dashboard/
+├── server.py            # FastAPI server — GET / (index.html) + GET /api/data
+├── index.html           # Synthetic Sentinel frontend (Space Grotesk, Plotly.js, vanilla JS)
 └── app.py               # Streamlit governance dashboard (streamlit run dashboard/app.py)
 
 scripts/
