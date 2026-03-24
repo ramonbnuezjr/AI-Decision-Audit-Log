@@ -57,3 +57,7 @@ models/
 # Distribution / packaging
 pip-wheel-metadata/
 share/python-wheels/
+
+# Design source exports (raw deliverables, originals live in docs/)
+stitch/
+audit_export.json

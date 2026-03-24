@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Synthetic Sentinel | AI Governance Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#a7a5ff",
+              "error": "#ff6e84",
+              "on-surface-variant": "#a3aac4",
+              "surface-container-lowest": "#000000",
+              "surface-container-high": "#141f38",
+              "on-tertiary": "#280067",
+              "error-container": "#a70138",
+              "on-secondary-container": "#ecfaff",
+              "surface-variant": "#192540",
+              "on-primary-fixed-variant": "#1a0099",
+              "secondary-fixed-dim": "#48d4f3",
+              "on-primary-fixed": "#000000",
+              "on-primary": "#1c00a0",
+              "outline-variant": "#40485d",
+              "secondary-container": "#00687a",
+              "on-error-container": "#ffb2b9",
+              "surface-dim": "#060e20",
+              "primary-dim": "#645efb",
+              "inverse-on-surface": "#4d556b",
+              "on-secondary": "#004b58",
+              "on-secondary-fixed": "#003a45",
+              "secondary-dim": "#40ceed",
+              "surface": "#060e20",
+              "tertiary-dim": "#8455ef",
+              "on-tertiary-fixed-variant": "#4600a8",
+              "secondary": "#53ddfc",
+              "surface-bright": "#1f2b49",
+              "tertiary": "#ac8aff",
+              "on-primary-container": "#14007e",
+              "surface-container-highest": "#192540",
+              "background": "#060e20",
+              "surface-container-low": "#091328",
+              "tertiary-container": "#8f60fa",
+              "surface-tint": "#a7a5ff",
+              "on-tertiary-container": "#000000",
+              "on-error": "#490013",
+              "primary-container": "#9795ff",
+              "on-surface": "#dee5ff",
+              "on-tertiary-fixed": "#1f0052",
+              "surface-container": "#0f1930",
+              "primary-fixed": "#9795ff",
+              "inverse-primary": "#4e45e4",
+              "tertiary-fixed": "#bda2ff",
+              "outline": "#6d758c",
+              "on-secondary-fixed-variant": "#005969",
+              "inverse-surface": "#faf8ff",
+              "primary-fixed-dim": "#8885ff",
+              "error-dim": "#d73357",
+              "tertiary-fixed-dim": "#b091ff",
+              "secondary-fixed": "#65e1ff",
+              "on-background": "#dee5ff"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .display-font { font-family: 'Space Grotesk', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary/30">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-slate-950/80 backdrop-blur-md flex justify-between items-center px-6 py-3 w-full">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-bold text-indigo-400 tracking-tighter font-['Space_Grotesk']">Synthetic Sentinel</span>
+<div class="hidden md:flex gap-6">
+<a class="text-slate-400 font-medium hover:text-indigo-300 transition-colors duration-200 font-['Space_Grotesk'] tracking-tight" href="#">System Status</a>
+<a class="text-indigo-400 font-bold border-b-2 border-indigo-400 hover:text-indigo-300 transition-colors duration-200 font-['Space_Grotesk'] tracking-tight" href="#">Health Pips</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-slate-400 hover:text-indigo-300 transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-slate-400 hover:text-indigo-300 transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="fixed left-0 h-full w-64 z-40 bg-slate-900 flex flex-col h-full py-8 px-4 mt-12 hidden md:flex">
+<div class="mb-10 px-2">
+<h2 class="text-indigo-400 font-black uppercase tracking-widest text-xs">AI Governance</h2>
+<p class="text-slate-500 text-[10px] uppercase tracking-tighter">Command Center</p>
+</div>
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-3 text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 transition-all duration-300 font-['Inter'] font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+<span>Audit Log</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 bg-indigo-500/10 text-indigo-400 border-r-4 border-indigo-500 translate-x-1 duration-200 font-['Inter'] font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Health</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 transition-all duration-300 font-['Inter'] font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span>Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 transition-all duration-300 font-['Inter'] font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-outline-variant/10 flex items-center gap-3 px-2">
+<img alt="Sentinel Admin Profile" class="w-10 h-10 rounded-full border border-indigo-500/30" data-alt="portrait of a professional technology executive in a dark modern office setting with blue ambient lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEEUS5pRvE39N8vGErj5gPHNexpW8ogD76z8jY-4E1nfyBU1BF0rEfzlk2izTJ3OV71vo8bQGaS3zFT8ZAKkWfHSgHQW0m6cb9uK-Fg4sE9PJV8PobUpVXWKVD048WU650Cu_d4FI2Ag0AL58_8fAsO82Ozi9zZDt1EmDbPsIY1vaY7gSaSEU5tWcAla00194j3XqL3ukA_zWlN_uvSCxA0g4vXPZNDG3DpTiZYGJIC4hnLgp98ui51BZFYOtOcRmKn21YjD0JjUY"/>
+<div>
+<p class="text-on-surface text-xs font-bold">Admin_Alpha</p>
+<p class="text-on-surface-variant text-[10px]">Sentinel Protocol v4.2</p>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="md:ml-64 pt-24 px-8 pb-12 min-h-screen bg-surface">
+<!-- Page Header -->
+<header class="mb-12 flex justify-between items-end">
+<div>
+<h1 class="text-4xl font-bold text-on-surface display-font tracking-tight">Oversight Dashboard</h1>
+<p class="text-on-surface-variant mt-2 font-body max-w-xl">Real-time governance telemetry for distributed neural models and inference endpoints.</p>
+</div>
+<div class="flex items-center gap-3">
+<span class="flex items-center gap-2 bg-secondary/10 text-secondary px-3 py-1 text-xs font-bold rounded-sm border border-secondary/20">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                    SYSTEMS NOMINAL
+                </span>
+</div>
+</header>
+<!-- Top Metrics Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+<div class="bg-surface-container-high p-6 group transition-all">
+<p class="text-on-surface-variant text-xs uppercase tracking-widest mb-2 font-medium">Total Calls</p>
+<div class="flex items-baseline gap-3">
+<span class="text-5xl font-bold display-font text-on-surface">284</span>
+<span class="text-error text-xs font-bold bg-error/10 px-2 py-0.5 border border-error/20">3 ERRORS</span>
+</div>
+<div class="mt-4 h-1 bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-primary w-4/5"></div>
+</div>
+</div>
+<div class="bg-surface-container-high p-6 group transition-all">
+<p class="text-on-surface-variant text-xs uppercase tracking-widest mb-2 font-medium">Success Rate</p>
+<div class="flex items-baseline gap-3">
+<span class="text-5xl font-bold display-font text-on-surface">98.2%</span>
+</div>
+<div class="mt-4 h-1 bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-secondary w-[98%]"></div>
+</div>
+</div>
+<div class="bg-surface-container-high p-6 group transition-all">
+<p class="text-on-surface-variant text-xs uppercase tracking-widest mb-2 font-medium">Total Tokens</p>
+<div class="flex items-baseline gap-3">
+<span class="text-5xl font-bold display-font text-on-surface">130k</span>
+<span class="text-on-surface-variant text-[10px] font-mono">017 RAW</span>
+</div>
+<div class="mt-4 h-1 bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-tertiary w-2/3"></div>
+</div>
+</div>
+<div class="bg-surface-container-high p-6 group transition-all">
+<p class="text-on-surface-variant text-xs uppercase tracking-widest mb-2 font-medium">Estimated Cost</p>
+<div class="flex items-baseline gap-3">
+<span class="text-5xl font-bold display-font text-primary">$0.0004</span>
+</div>
+<div class="mt-4 h-1 bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-primary-container w-1/4"></div>
+</div>
+</div>
+</section>
+<!-- Charts Bento Grid -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12">
+<!-- Provider Health -->
+<div class="lg:col-span-4 bg-surface-container-low p-6">
+<div class="flex justify-between items-center mb-8">
+<h3 class="text-lg font-bold display-font">Provider Health</h3>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="more_vert">more_vert</span>
+</div>
+<div class="space-y-6">
+<div class="space-y-2">
+<div class="flex justify-between text-xs text-on-surface-variant">
+<span>OpenAI gpt-4-turbo</span>
+<span class="text-secondary">ACTIVE</span>
+</div>
+<div class="flex gap-1 h-8">
+<div class="flex-1 bg-secondary/80"></div>
+<div class="flex-1 bg-secondary/80"></div>
+<div class="flex-1 bg-secondary/80"></div>
+<div class="flex-1 bg-secondary/80"></div>
+<div class="flex-1 bg-error/80"></div>
+<div class="flex-1 bg-secondary/80"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs text-on-surface-variant">
+<span>Anthropic claude-3</span>
+<span class="text-secondary">ACTIVE</span>
+</div>
+<div class="flex gap-1 h-8">
+<div class="flex-1 bg-secondary/80"></div>
+<div class="flex-1 bg-secondary/80"></div>
+<div class="flex-1 bg-secondary/80"></div>
+<div class="flex-1 bg-secondary/80"></div>
+<div class="flex-1 bg-secondary/80"></div>
+<div class="flex-1 bg-secondary/80"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Latency Profile -->
+<div class="lg:col-span-5 bg-surface-container-low p-6">
+<div class="flex justify-between items-center mb-8">
+<h3 class="text-lg font-bold display-font">Latency Profile (ms)</h3>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="speed">speed</span>
+</div>
+<div class="space-y-8">
+<div class="relative">
+<div class="flex justify-between mb-2 text-xs text-on-surface-variant">
+<span>P50 Median</span>
+<span class="text-on-surface font-mono">412ms</span>
+</div>
+<div class="w-full bg-surface-container-highest h-3">
+<div class="bg-primary-dim h-full" style="width: 45%"></div>
+</div>
+</div>
+<div class="relative">
+<div class="flex justify-between mb-2 text-xs text-on-surface-variant">
+<span>P95 Tail</span>
+<span class="text-on-surface font-mono">1,240ms</span>
+</div>
+<div class="w-full bg-surface-container-highest h-3">
+<div class="bg-primary h-full" style="width: 78%"></div>
+</div>
+</div>
+<div class="relative">
+<div class="flex justify-between mb-2 text-xs text-on-surface-variant">
+<span>MAX Spike</span>
+<span class="text-on-surface font-mono">4,890ms</span>
+</div>
+<div class="w-full bg-surface-container-highest h-3">
+<div class="bg-error h-full" style="width: 95%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Token Burn -->
+<div class="lg:col-span-3 bg-surface-container-low p-6 flex flex-col items-center justify-center text-center">
+<h3 class="text-lg font-bold display-font mb-6 w-full text-left">Token Burn</h3>
+<div class="relative w-32 h-32 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-container-highest" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-tertiary" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" stroke-dasharray="364.4" stroke-dashoffset="100" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-2xl font-bold display-font">72%</span>
+<span class="text-[8px] text-on-surface-variant uppercase tracking-widest">Quota</span>
+</div>
+</div>
+<div class="mt-8 space-y-2 w-full text-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-tertiary"></div>
+<span class="text-on-surface-variant">GPT-4</span>
+</div>
+<span class="font-mono">92,410</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-primary"></div>
+<span class="text-on-surface-variant">Claude-3</span>
+</div>
+<span class="font-mono">37,607</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Tables Section -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+<!-- Session Activity -->
+<div class="bg-surface-container p-6">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-lg font-bold display-font">Session Activity</h3>
+<button class="text-xs text-primary font-bold hover:underline">VIEW ALL</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="text-[10px] uppercase tracking-widest text-on-surface-variant border-b border-outline-variant/10">
+<th class="pb-4 font-medium">Session ID</th>
+<th class="pb-4 font-medium">Provider</th>
+<th class="pb-4 font-medium text-right">Latency</th>
+<th class="pb-4 font-medium text-right">Tokens</th>
+</tr>
+</thead>
+<tbody class="text-sm">
+<tr class="border-b border-outline-variant/5 hover:bg-surface-container-high transition-colors">
+<td class="py-4 font-mono text-on-surface">sess_8v92...</td>
+<td class="py-4 text-on-surface-variant">gpt-4-turbo</td>
+<td class="py-4 text-right font-mono text-secondary">412ms</td>
+<td class="py-4 text-right font-mono">1,024</td>
+</tr>
+<tr class="border-b border-outline-variant/5 hover:bg-surface-container-high transition-colors">
+<td class="py-4 font-mono text-on-surface">sess_k01p...</td>
+<td class="py-4 text-on-surface-variant">claude-3-opus</td>
+<td class="py-4 text-right font-mono text-secondary">890ms</td>
+<td class="py-4 text-right font-mono">2,419</td>
+</tr>
+<tr class="border-b border-outline-variant/5 hover:bg-surface-container-high transition-colors">
+<td class="py-4 font-mono text-on-surface">sess_m4n2...</td>
+<td class="py-4 text-on-surface-variant">gpt-4-turbo</td>
+<td class="py-4 text-right font-mono text-secondary">380ms</td>
+<td class="py-4 text-right font-mono">512</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Incident Log -->
+<div class="bg-surface-container p-6">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-lg font-bold display-font">Incident Log</h3>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="text-xs text-error font-bold">3 ACTIVE</span>
+</div>
+</div>
+<div class="space-y-4">
+<div class="p-4 bg-error-container/10 border-l-2 border-error flex items-start justify-between">
+<div>
+<p class="text-error text-xs font-bold uppercase tracking-tight">429 Rate Limit Exceeded</p>
+<p class="text-on-surface-variant text-[11px] mt-1">OpenAI API endpoint reached quota limit.</p>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant">14:02:11</span>
+</div>
+<div class="p-4 bg-error-container/10 border-l-2 border-error flex items-start justify-between">
+<div>
+<p class="text-error text-xs font-bold uppercase tracking-tight">503 Service Unavailable</p>
+<p class="text-on-surface-variant text-[11px] mt-1">Anthropic upstream timeout detected.</p>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant">13:58:45</span>
+</div>
+<div class="p-4 bg-error-container/10 border-l-2 border-error flex items-start justify-between">
+<div>
+<p class="text-error text-xs font-bold uppercase tracking-tight">401 Unauthorized</p>
+<p class="text-on-surface-variant text-[11px] mt-1">Key rotation failure for secondary proxy.</p>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant">12:14:02</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Contextual FAB (Hidden on this detailed view per suppression rules if strictly applied, but keeping for dashboard navigation context) -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary shadow-2xl flex items-center justify-center rounded-sm hover:scale-105 transition-transform duration-200 z-50">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+</body></html>
