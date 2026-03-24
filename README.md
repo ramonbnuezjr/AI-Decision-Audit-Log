@@ -178,6 +178,34 @@ Each ticket is sent through five AI analysis prompts — `summarize`, `root_caus
 persisted to the audit log automatically. Supports JSON exports from ServiceNow
 (both bare arrays and the `{"records": [...]}` wrapper format).
 
+## Governance Dashboard
+
+A local Streamlit dashboard visualises the full audit log in a browser tab.
+
+**What it shows:**
+- KPI cards — total calls, success rate, total tokens, estimated cloud cost
+- Provider health bar chart (success vs. error per provider)
+- Latency profile (p50 / p95 / max horizontal bar chart)
+- Token burn donut chart by provider
+- Calls over time line chart
+- Session activity table (sortable, all sessions)
+- Incident / error log table
+- Latency anomaly detection (calls > 2× median flagged)
+
+**Setup:**
+
+```bash
+# Install dashboard extras (streamlit + plotly + pandas)
+pip install -e ".[dashboard]"
+
+# Launch
+streamlit run dashboard/app.py
+# Opens automatically at http://localhost:8501
+```
+
+The dashboard reads `data/audit.db` directly — no server or extra config needed.
+Use the **Refresh data** button in the sidebar after running new incident batches.
+
 ## Environment Variables
 
 See [`.env.example`](.env.example) for all required and optional variables with descriptions.
@@ -232,6 +260,9 @@ src/
 │   └── logger.py        # AuditLogger — pre/post hooks, writes every call
 └── agent/
     └── agent.py         # Routes Anthropic / OpenAI / llama_cpp through AuditLogger
+
+dashboard/
+└── app.py               # Streamlit governance dashboard (streamlit run dashboard/app.py)
 
 scripts/
 ├── run_incidents.py     # ServiceNow incident runner — 5 prompts/ticket, JSON/CSV input
