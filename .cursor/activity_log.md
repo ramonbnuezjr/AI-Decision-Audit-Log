@@ -103,6 +103,37 @@
 - Docs updated: `changelog.md`, `README.md`, `roadmap.md`, `activity_log.md`
 - Changes pushed to https://github.com/ramonbnuezjr/AI-Decision-Audit-Log
 
+### 2026-03-23 — Synthetic Sentinel governance dashboard built (v0.3.0)
+
+- **Mode:** PRODUCTION
+- **Goal:** Build a pixel-accurate browser dashboard for the audit log that matches
+  the Synthetic Sentinel design system mockup
+
+#### Streamlit attempt (Option B)
+- Redesigned `dashboard/app.py` with CSS injection, Google Fonts, HTML pip rows,
+  incident cards, and Plotly dark-theme reskin
+- Identified fundamental Streamlit constraints: sealed React top nav bar, uncustomisable
+  sidebar nav items, no equal-height column support — all prevent pixel-accurate match
+- Kept Streamlit version as a lightweight option; added `.streamlit/config.toml`
+
+#### FastAPI + HTML dashboard (Option A — final implementation)
+- Created `dashboard/server.py`: FastAPI, 2 routes (`GET /`, `GET /api/data`),
+  verified 200 on both; confirmed `total_calls=284, rate=98.2%, errors=5`
+- Created `dashboard/index.html`: ~500 lines, zero build tooling required:
+  - Fixed top nav bar, left sidebar with nav + footer avatar
+  - 4 KPI cards (Space Grotesk 3rem), provider pip tiles, inline latency bars,
+    Plotly donut, session table (no grid lines), incident cards (red left-border)
+  - Calls-over-time area chart, 30s auto-refresh, loading shimmer
+- Both dashboard options confirmed serving HTTP 200
+
+#### Design docs organised
+- Moved `stitch/` design deliverables to `docs/`:
+  - `docs/dashboard-design.md` — spec with implementation map table
+  - `docs/assets/dashboard-mockup.png` — original target screenshot
+  - `docs/assets/dashboard-mockup.html` — static reference mockup
+- `stitch/` added to `.gitignore`; raw export folder remains in `~/Downloads/stitch/`
+- **Changes pushed to GitHub** (v0.3.0)
+
 ### 2026-03-23 — Real-world POS incident batch run (v0.2.1)
 
 - **Mode:** PRODUCTION

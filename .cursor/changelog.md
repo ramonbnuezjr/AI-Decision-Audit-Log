@@ -5,6 +5,44 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## v0.3.0 — Synthetic Sentinel Governance Dashboard — 2026-03-23
+
+### Added
+- **`dashboard/server.py`** — FastAPI server with two routes:
+  - `GET /` serves `dashboard/index.html` as a static file
+  - `GET /api/data` returns a single JSON payload from all 6 `src/db/query.py` functions
+    (summary, health, latency, usage, sessions, errors, hourly timeline)
+  - Run with: `uvicorn dashboard.server:app --port 8000`
+- **`dashboard/index.html`** — full Synthetic Sentinel frontend (pixel-accurate to mockup):
+  - Fixed top navigation bar: brand, nav tabs, notification icon, avatar
+  - Left sidebar: AI GOVERNANCE / COMMAND CENTER label, Audit Log / Health / Analytics /
+    Settings nav items with active state and status pip, Admin_Alpha footer
+  - 4 KPI cards: Space Grotesk 3rem display numbers, gradient bottom bar, error pill badge
+  - 3-column middle row: provider pip tiles (cyan = success, red = error) with
+    ACTIVE / BLOCKED badges; inline CSS latency bars (p50 / p95 / max); Plotly donut
+    token burn with center label
+  - 2-column bottom row: session table (no grid lines) + incident cards (red left-border
+    accent, bold error code, timestamp right-aligned)
+  - Calls over time: filled area Plotly line chart
+  - Auto-refresh every 30 seconds via `fetch /api/data`
+  - Loading shimmer bar and spinner state
+- **`dashboard/app.py`** (Streamlit) — retained as Option B; redesigned to Synthetic
+  Sentinel dark theme via CSS injection, HTML pip rows, incident cards, and Plotly reskin
+- **`.streamlit/config.toml`** — dark base theme for Streamlit Option B
+- **`docs/dashboard-design.md`** — Synthetic Sentinel design system spec with
+  implementation map linking every design rule to the CSS class in `dashboard/index.html`
+- **`docs/assets/dashboard-mockup.png`** — original visual target screenshot
+- **`docs/assets/dashboard-mockup.html`** — static reference mockup from designer
+- **`pyproject.toml`** — added `[dashboard]` extra (streamlit, plotly, pandas) and
+  `[server]` extra (fastapi, uvicorn)
+
+### Technical note — why FastAPI over Streamlit
+Streamlit cannot replicate the mockup exactly: its React component tree seals the top
+navigation bar, sidebar nav items, and column height alignment behind framework
+constraints that CSS injection cannot override. The FastAPI + HTML approach gives full
+CSS Grid control, a real fixed top bar, and proper multi-column layout — identical to
+the reference mockup.
+
 ## v0.2.1 — Real-World POS Incident Batch Run — 2026-03-23
 
 ### Added

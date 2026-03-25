@@ -27,6 +27,9 @@
 - [x] First real-world batch run complete (v0.2.1) — 50 POS incidents × 5 prompts = 278 calls,
       100% success, zero errors, Llama 3.2 3B on M2 Mini Metal GPU; ServiceNow JSON wrapper
       and field name fixes applied; governance report verified against live data
+- [x] Governance dashboard shipped (v0.3.0) — FastAPI + HTML Synthetic Sentinel frontend
+      pixel-accurate to design mockup; Streamlit Option B retained; design system spec
+      and mockup assets committed to `docs/`
 - [ ] Pre-commit hooks passing cleanly (black, ruff, mypy, bandit)
 - [ ] `mypy --strict` passing cleanly across all modules
 - [ ] All secrets validated as present at startup; fail fast with clear error message
